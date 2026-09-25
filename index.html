@@ -60,11 +60,18 @@
 <body>
 
 <div class="container">
-    <h2>Absensi Gerbang Santri</h2>
+    <h2>Absensi Gerbang Pondok</h2>
     
+    <!-- Bagian Petugas diubah menjadi Dropdown -->
     <div class="form-group">
         <label for="pencatat">Nama Petugas / Penjaga:</label>
-        <input type="text" id="pencatat" placeholder="Contoh: Ustadz Ahmad" value="">
+        <select id="pencatat">
+            <option value="">-- Pilih Nama Petugas --</option>
+            <option value="Ustadz Ahmad Rifani">Ustadz Ahmad Rifani</option>
+            <option value="Ustadz Ahmad Naparin">Ustadz Ahmad Naparin</option>
+            <option value="Ustadz Syamsul Ma'arif">Ustadz Syamsul Ma'arif</option>
+            <!-- Tambahkan nama petugas lain di sini jika diperlukan -->
+        </select>
     </div>
 
     <div class="form-group">
@@ -86,7 +93,6 @@
 
 <script>
     // CONTOH DATABASE SANTRI SEMENTARA (ID dan Nama)
-    // Nanti ID ini yang dicetak menjadi QR Code di kartu santri
     const databaseSantri = {
         "SANTRI-001": "Ahmad Fauzi",
         "SANTRI-002": "Muhammad Rizki",
@@ -94,14 +100,13 @@
         "SANTRI-004": "Fatimah Zahra"
     };
 
-    // GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+    // URL Web App Google Apps Script Anda
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxjL6a_vHIsXX7eolD-7cdUge-s12b2vF-bnPIw7b43-UeDDDwctQCglcj-q3Ra6-c2w/exec";
 
     let lastScannedId = "";
     let lastScanTime = 0;
 
     function onScanSuccess(decodedText, decodedResult) {
-        // Mencegah scan ganda dalam waktu 3 detik untuk kartu yang sama
         const currentTime = new Date().getTime();
         if (decodedText === lastScannedId && (currentTime - lastScanTime < 3000)) {
             return;
@@ -118,11 +123,16 @@
         }
 
         let status = document.getElementById("status").value;
-        let pencatat = document.getElementById("pencatat").value || "Petugas Jaga";
+        let pencatat = document.getElementById("pencatat").value;
+
+        // Validasi pilihan petugas
+        if (!pencatat) {
+            showResult("Harap pilih Nama Petugas terlebih dahulu!", "error");
+            return;
+        }
 
         showResult(`Mengirim data: ${namaSantri} (${status})...`, "");
 
-        // Kirim data ke Google Sheets via Apps Script
         const dataToSend = {
             idSantri: decodedText,
             nama: namaSantri,
@@ -132,7 +142,7 @@
 
         fetch(WEB_APP_URL, {
             method: "POST",
-            mode: "no-cors", // Diperlukan untuk Google Apps Script Web App
+            mode: "no-cors",
             headers: {
                 "Content-Type": "application/json",
             },
@@ -140,7 +150,6 @@
         })
         .then(() => {
             showResult(`BERHASIL! <br><b>${namaSantri}</b> tercatat <b>${status}</b>.`, "success");
-            // Mainkan suara beep sederhana jika didukung browser (opsional)
             if (window.navigator && window.navigator.vibrate) {
                 window.navigator.vibrate(200);
             }
