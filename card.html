@@ -65,7 +65,7 @@
             margin-top: 20px;
         }
         
-        /* Desain Kartu Santri Modern dengan Watermark */
+        /* Desain Kartu Santri Modern dengan Watermark Elegan */
         .card-preview {
             width: 340px;
             height: 210px;
@@ -84,19 +84,20 @@
             overflow: hidden;
         }
 
-        /* Efek Watermark Berulang di Background */
+        /* Efek Watermark Lebih Jelas & Elegan (Gaya Huruf Serif Klasik) */
         .card-preview::after {
-            content: "KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN";
+            content: "KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN • KEMADRASAHAN •";
             position: absolute;
             top: -20px;
             left: -20px;
             right: -20px;
             bottom: -20px;
-            font-size: 9px;
+            font-family: 'Times New Roman', Times, serif; /* Jenis font elegan/klasik */
+            font-size: 10px;
             font-weight: bold;
-            color: rgba(39, 174, 96, 0.04); /* Transparan sangat lembut agar teks kartu tetap terbaca jelas */
-            line-height: 1.8;
-            letter-spacing: 2px;
+            color: rgba(39, 174, 96, 0.08); /* Dibuat sedikit lebih jelas namun tetap nyaman dibaca */
+            line-height: 1.6;
+            letter-spacing: 3px;
             transform: rotate(-15deg);
             z-index: 0;
             pointer-events: none;
