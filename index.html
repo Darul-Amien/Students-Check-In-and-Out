@@ -60,7 +60,7 @@
             <option value="Ustadz Ahmad Rifani">Ustadz Ahmad Rifani</option>
             <option value="Ustadz Pengabdian">Ustadz Pengabdian</option>
             <option value="Ustadz Keamanan">Ustadz Keamanan</option>
-            <option value="ustadzha Pengabdian">Ustadzah Pengabdian</option>
+            <option value="Ustadzah Pengabdian">Ustadzah Pengabdian</option>
         </select>
     </div>
 
@@ -101,15 +101,20 @@
 
     let lastScannedId = "";
     let lastScanTime = 0;
+    let isProcessing = false; // Variabel pengaman anti double-scan
 
     function onScanSuccess(decodedText, decodedResult) {
+        if (isProcessing) return; // Abaikan jika sedang memproses
+
         const currentTime = new Date().getTime();
         let cleanId = String(decodedText).trim();
         
-        if (cleanId === lastScannedId && (currentTime - lastScanTime < 3000)) {
+        // Jeda 4 detik untuk mencegah pembacaan kamera yang terlalu cepat pada kartu yang sama
+        if (cleanId === lastScannedId && (currentTime - lastScanTime < 4000)) {
             return;
         }
         
+        isProcessing = true;
         lastScannedId = cleanId;
         lastScanTime = currentTime;
 
@@ -119,6 +124,7 @@
         
         if (!namaSantri) {
             showResult(`ID "${cleanId}" tidak ditemukan di database!`, "error");
+            setTimeout(() => { isProcessing = false; }, 1500);
             return;
         }
 
@@ -127,6 +133,7 @@
 
         if (!pencatat) {
             showResult("Harap pilih Nama Petugas terlebih dahulu!", "error");
+            isProcessing = false;
             return;
         }
 
@@ -150,9 +157,14 @@
             if (window.navigator && window.navigator.vibrate) {
                 window.navigator.vibrate(200);
             }
+            // Buka kembali kunci setelah 2 detik
+            setTimeout(() => {
+                isProcessing = false;
+            }, 2000);
         })
         .catch(error => {
             showResult(`Gagal mengirim data: ${error}`, "error");
+            isProcessing = false;
         });
     }
 
