@@ -65,7 +65,7 @@
             margin-top: 20px;
         }
         
-        /* Desain Kartu Santri Modern & Elegan */
+        /* Desain Kartu Santri Modern dengan Watermark */
         .card-preview {
             width: 340px;
             height: 210px;
@@ -83,7 +83,32 @@
             position: relative;
             overflow: hidden;
         }
+
+        /* Efek Watermark Berulang di Background */
+        .card-preview::after {
+            content: "KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN KEMADRASAHAN";
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            font-size: 9px;
+            font-weight: bold;
+            color: rgba(39, 174, 96, 0.04); /* Transparan sangat lembut agar teks kartu tetap terbaca jelas */
+            line-height: 1.8;
+            letter-spacing: 2px;
+            transform: rotate(-15deg);
+            z-index: 0;
+            pointer-events: none;
+            word-break: break-all;
+        }
         
+        /* Memastikan konten kartu berada di atas watermark */
+        .card-header, .card-body {
+            position: relative;
+            z-index: 1;
+        }
+
         /* Garis aksen tipis di sisi kiri kartu */
         .card-preview::before {
             content: '';
@@ -93,6 +118,7 @@
             height: 100%;
             width: 5px;
             background-color: #27ae60;
+            z-index: 2;
         }
 
         .card-header {
@@ -109,7 +135,7 @@
             margin-right: 10px;
         }
         .pondok-title {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 800;
             color: #1e3a8a;
             letter-spacing: 0.5px;
@@ -117,7 +143,7 @@
             line-height: 1.1;
         }
         .pondok-sub {
-            font-size: 7.5px;
+            font-size: 7px;
             color: #64748b;
             font-weight: 600;
             margin-top: 1px;
@@ -135,12 +161,12 @@
         .santri-name { font-size: 14px; font-weight: bold; color: #0f172a; margin-bottom: 4px; line-height: 1.2; }
         .santri-detail { font-size: 10.5px; color: #334155; margin-bottom: 2px; }
         .card-notes { 
-            font-size: 6px; 
+            font-size: 5.5px; 
             color: #475569; 
-            margin-top: 6px; 
+            margin-top: 5px; 
             line-height: 1.3; 
             border-top: 1px dashed #cbd5e1;
-            padding-top: 4px;
+            padding-top: 3px;
         }
         
         .card-right { width: 38%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -238,7 +264,7 @@
                     <img src="${FIXED_LOGO_URL}" class="card-logo" onerror="this.style.display='none'">
                     <div>
                         <div class="pondok-title">${namaPesantren}</div>
-                        <div class="pondok-sub">Desa Teluk Labak Kecamatan Daha Utara HSS</div>
+                        <div class="pondok-sub">Desa Teluk Labak Kec. Daha Utara Kab. Hulu Sungai Selatan</div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -247,9 +273,9 @@
                         <div class="santri-detail"><b>ID:</b> ${id}</div>
                         <div class="santri-detail"><b>Kelas:</b> ${kelas}</div>
                         <div class="card-notes">
-                            * Kartu Santri<br>
-                            ** Kartu Peserta Ujian<br>
-                            *** Kartu Scan Kehadiran
+                            * Kartu ini berfungsi sebagai Kartu Santri<br>
+                            ** Kartu ini berfungsi sebagai Kartu Peserta Ujian<br>
+                            *** Kartu ini berfungsi sebagai Kartu Scan Kehadiran
                         </div>
                     </div>
                     <div class="card-right">
