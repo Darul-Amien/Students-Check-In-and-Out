@@ -63,6 +63,18 @@
             color: #7f8c8d;
             margin-bottom: 10px;
         }
+        .btn-test {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        .btn-test:hover { background-color: #2980b9; }
     </style>
 </head>
 <body>
@@ -71,6 +83,9 @@
     <h2>Scanner Gerbang Pondok</h2>
     
     <div id="dbStatus" class="loading-db">Memuat database master santri...</div>
+
+    <!-- Tombol tes suara untuk memastikan izin audio browser aktif -->
+    <button class="btn-test" onclick="testSuara()">🔊 Tes Suara ("Terima Kasih")</button>
 
     <div class="form-group">
         <label for="petugas">Nama Petugas Penjaga:</label>
@@ -99,19 +114,28 @@
     let listMasterSantri = [];
     let isProcessing = false;
 
-    // 1. Fungsi Text-to-Speech untuk suara "Terima kasih" di HP/Laptop
+    // Fungsi Text-to-Speech untuk suara
     function ucapkanTerimaKasih(namaSantri) {
         if ('speechSynthesis' in window) {
-            // Anda bisa menggunakan teks statis "Terima kasih" atau digabung dengan nama santri
+            // Batalkan antrean suara sebelumnya agar tidak menumpuk
+            window.speechSynthesis.cancel();
+
             let text = "Terima kasih, " + namaSantri;
             let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'id-ID'; // Mengatur bahasa ke Bahasa Indonesia
+            utterance.lang = 'id-ID'; // Bahasa Indonesia
             utterance.rate = 1.0;     // Kecepatan normal
             window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn("Browser tidak Mendukung Speech Synthesis.");
         }
     }
 
-    // 2. Ambil data master santri dari GAS saat halaman dibuka
+    // Fungsi untuk mengetes suara secara manual via tombol
+    function testSuara() {
+        ucapkanTerimaKasih("Santri Uji Coba");
+    }
+
+    // Ambil data master santri dari GAS saat halaman dibuka
     async function loadMasterSantri() {
         try {
             let response = await fetch(WEB_APP_URL);
@@ -124,9 +148,9 @@
         }
     }
 
-    // 3. Fungsi yang dieksekusi saat kamera berhasil membaca QR Code
+    // Fungsi yang dieksekusi saat kamera berhasil membaca QR Code
     async function onScanSuccess(decodedText) {
-        if (isProcessing) return; // Mencegah scan ganda berturut-turut
+        if (isProcessing) return; 
         isProcessing = true;
 
         let idSantriScan = decodedText.trim();
@@ -139,7 +163,6 @@
             return;
         }
 
-        // Mencari data santri berdasarkan ID di array master (mendukung properti id atau id_santri)
         let santri = listMasterSantri.find(s => String(s.id_santri || s.id).trim() === idSantriScan);
 
         if (!santri) {
@@ -150,7 +173,6 @@
 
         showAlert(`Memproses absensi untuk ${santri.nama}...`, "success");
 
-        // Kirim data via POST ke Google Apps Script
         try {
             let payload = {
                 idSantri: santri.id_santri || santri.id,
@@ -179,7 +201,6 @@
             showAlert("Terjadi kesalahan koneksi ke server.", "error");
         }
 
-        // Jeda waktu sebelum scanner aktif membaca kembali
         setTimeout(() => {
             isProcessing = false;
             hideAlert();
@@ -197,10 +218,8 @@
         document.getElementById("alertBox").style.display = "none";
     }
 
-    // Jalankan pemuatan data master
     loadMasterSantri();
 
-    // Inisialisasi kamera scanner QR
     let html5QrcodeScanner = new Html5QrcodeScanner(
         "reader", { fps: 10, qrbox: 250 }, false
     );
