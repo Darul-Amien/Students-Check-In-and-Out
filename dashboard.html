@@ -166,9 +166,12 @@
             return;
         }
 
+        // Pembersih karakter khusus (mengabaikan strip dan spasi agar pencocokan selalu akurat)
+        let cleanScanId = idSantriScan.replace(/[-\s]/g, "");
+
         let santri = listMasterSantri.find(s => {
-            let sId = String(s.id_santri || s.id || "").trim();
-            return sId === idSantriScan;
+            let sId = String(s.id_santri || s.id || "").trim().replace(/[-\s]/g, "");
+            return sId === cleanScanId;
         });
 
         if (!santri) {
