@@ -88,25 +88,74 @@
 </div>
 
 <script>
-    // Ganti dengan URL Web App Google Apps Script Anda yang sama
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9k5HqsJDbDkd5jVhJL8tOALlWTV-m_3D37JzDLCy1i6KRaFwES640Ja3DXO1xFSlLTg/exec";
 
     function loadDashboardData() {
-        // Kita bisa menambahkan parameter aksi atau mengambil seluruh log Sheet1
-        // Untuk saat ini, kita tarik data dari Web App (kita bisa kustomisasi doGet untuk kirim log Sheet1 jika perlu)
         fetch(WEB_APP_URL + "?action=logs")
             .then(response => response.json())
-            .then(data => {
-                // Logika pengolahan data status terakhir per santri akan ditampilkan di sini
+            .then(logs => {
+                let statusTerakhirSantri = {};
+
+                // Merekam status terakhir dari setiap ID santri di log Sheet1
+                logs.forEach(log => {
+                    statusTerakhirSantri[log.id] = {
+                        id: log.id,
+                        nama: log.nama,
+                        status: log.status,
+                        waktu: log.waktu,
+                        pencatat: log.pencatat
+                    };
+                });
+
+                let outsideList = [];
+                let insideCount = 0;
+                let outsideCount = 0;
+
+                // Memilah jumlah santri di dalam vs di luar pondok
+                for (let id in statusTerakhirSantri) {
+                    let data = statusTerakhirSantri[id];
+                    if (data.status === "Keluar") {
+                        outsideCount++;
+                        outsideList.push(data);
+                    } else {
+                        insideCount++;
+                    }
+                }
+
+                // Menampilkan angka statistik ke kartu
+                document.getElementById("countInside").innerText = insideCount;
+                document.getElementById("countOutside").innerText = outsideCount;
+
+                // Memasukkan data ke dalam tabel HTML
+                let tbody = document.getElementById("outsideTableBody");
+                tbody.innerHTML = "";
+
+                if (outsideList.length > 0) {
+                    outsideList.forEach(item => {
+                        let tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${item.id || '-'}</td>
+                            <td><b>${item.nama}</b></td>
+                            <td>${new Date(item.waktu).toLocaleString('id-ID')}</td>
+                            <td>${item.pencatat}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    document.getElementById("outsideTable").style.display = "table";
+                } else {
+                    document.getElementById("outsideTable").style.display = "none";
+                    // Opsional: Bisa beri baris kosong info jika semua santri di dalam
+                }
+
                 document.getElementById("loadingText").style.display = "none";
-                document.getElementById("outsideTable").style.display = "table";
             })
             .catch(error => {
                 document.getElementById("loadingText").innerText = "Gagal memuat data dashboard.";
+                document.getElementById("loadingText").style.color = "red";
             });
     }
 
-    // Refresh data otomatis setiap 10 detik
+    // Muat data saat halaman dibuka & refresh otomatis setiap 10 detik
     loadDashboardData();
     setInterval(loadDashboardData, 10000);
 </script>
