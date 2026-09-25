@@ -64,17 +64,18 @@
             margin-bottom: 10px;
         }
         .btn-test {
-            background-color: #3498db;
+            background-color: #27ae60;
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 10px 12px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
+            font-weight: bold;
             margin-bottom: 15px;
             width: 100%;
         }
-        .btn-test:hover { background-color: #2980b9; }
+        .btn-test:hover { background-color: #219653; }
     </style>
 </head>
 <body>
@@ -84,8 +85,8 @@
     
     <div id="dbStatus" class="loading-db">Memuat database master santri...</div>
 
-    <!-- Tombol tes suara untuk memastikan izin audio browser aktif -->
-    <button class="btn-test" onclick="testSuara()">🔊 Tes Suara ("Terima Kasih")</button>
+    <!-- Tombol tes audio (Sekaligus mengaktifkan izin audio browser HP) -->
+    <button class="btn-test" onclick="testAudio()">🔊 Klik di Sini untuk Aktifkan Suara</button>
 
     <div class="form-group">
         <label for="petugas">Nama Petugas Penjaga:</label>
@@ -114,25 +115,22 @@
     let listMasterSantri = [];
     let isProcessing = false;
 
-    // Fungsi Text-to-Speech untuk suara
-    function ucapkanTerimaKasih(namaSantri) {
-        if ('speechSynthesis' in window) {
-            // Batalkan antrean suara sebelumnya agar tidak menumpuk
-            window.speechSynthesis.cancel();
+    // Menyiapkan objek Audio MP3 (menggunakan suara efek sukses/notifikasi)
+    // Anda bisa mengganti URL di bawah dengan link file MP3 Anda sendiri di GitHub
+    const audioTerimaKasih = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
 
-            let text = "Terima kasih, " + namaSantri;
-            let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'id-ID'; // Bahasa Indonesia
-            utterance.rate = 1.0;     // Kecepatan normal
-            window.speechSynthesis.speak(utterance);
-        } else {
-            console.warn("Browser tidak Mendukung Speech Synthesis.");
-        }
+    // Fungsi untuk memutar suara MP3
+    function putarSuara() {
+        audioTerimaKasih.currentTime = 0; // Reset ke awal
+        audioTerimaKasih.play().catch(error => {
+            console.log("Audio diblokir browser sebelum interaksi:", error);
+        });
     }
 
-    // Fungsi untuk mengetes suara secara manual via tombol
-    function testSuara() {
-        ucapkanTerimaKasih("Santri Uji Coba");
+    // Fungsi tombol tes manual untuk membuka kunci izin audio HP
+    function testAudio() {
+        putarSuara();
+        alert("Audio aktif! Sekarang suara akan berbunyi otomatis saat scan berhasil.");
     }
 
     // Ambil data master santri dari GAS saat halaman dibuka
@@ -191,8 +189,8 @@
             if (result.result === "success") {
                 showAlert(`✅ BERHASIL: ${santri.nama} (${statusDipilih})`, "success");
                 
-                // Memanggil suara konfirmasi otomatis
-                ucapkanTerimaKasih(santri.nama);
+                // 🔊 PUTAR SUARA MP3 OTOMATIS SAAT BERHASIL
+                putarSuara();
             } else {
                 showAlert(`❌ GAGAL: ${result.message}`, "error");
             }
