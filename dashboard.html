@@ -115,13 +115,12 @@
     let listMasterSantri = [];
     let isProcessing = false;
 
-    // Menyiapkan objek Audio MP3 (menggunakan suara efek sukses/notifikasi)
-    // Anda bisa mengganti URL di bawah dengan link file MP3 Anda sendiri di GitHub
+    // Menyiapkan objek Audio MP3
     const audioTerimaKasih = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
 
     // Fungsi untuk memutar suara MP3
     function putarSuara() {
-        audioTerimaKasih.currentTime = 0; // Reset ke awal
+        audioTerimaKasih.currentTime = 0; 
         audioTerimaKasih.play().catch(error => {
             console.log("Audio diblokir browser sebelum interaksi:", error);
         });
@@ -161,7 +160,11 @@
             return;
         }
 
-        let santri = listMasterSantri.find(s => String(s.id_santri || s.id).trim() === idSantriScan);
+        // Pencarian data santri yang lebih fleksibel mencakup id_santri atau id
+        let santri = listMasterSantri.find(s => {
+            let sId = String(s.id_santri || s.id || "").trim();
+            return sId === idSantriScan;
+        });
 
         if (!santri) {
             showAlert(`Database tidak ditemukan! ID: ${idSantriScan} tidak terdaftar.`, "error");
@@ -173,7 +176,7 @@
 
         try {
             let payload = {
-                idSantri: santri.id_santri || santri.id,
+                idSantri: String(santri.id_santri || santri.id).trim(),
                 nama: santri.nama,
                 status: statusDipilih,
                 pencatat: petugas
