@@ -85,7 +85,7 @@
             display: flex;
             align-items: center;
             border-bottom: 1.5px solid #27ae60;
-            padding-bottom: 5px;
+            padding-bottom: 4px;
         }
         .card-logo {
             width: 32px;
@@ -101,8 +101,9 @@
             line-height: 1.1;
         }
         .pondok-sub {
-            font-size: 7.5px;
+            font-size: 7px;
             color: #555;
+            font-weight: bold;
         }
         
         .card-body {
@@ -110,16 +111,16 @@
             justify-content: space-between;
             align-items: center;
             flex: 1;
-            margin-top: 5px;
+            margin-top: 2px;
         }
-        .card-left { width: 63%; }
+        .card-left { width: 62%; }
         .santri-name { font-size: 13px; font-weight: bold; color: #2c3e50; margin-bottom: 2px; line-height: 1.2; }
         .santri-detail { font-size: 10px; color: #444; margin-bottom: 1px; }
-        .card-notes { font-size: 6.5px; color: #555; margin-top: 3px; line-height: 1.2; font-style: italic; }
+        .card-notes { font-size: 6.5px; color: #555; margin-top: 3px; line-height: 1.2; }
         
         .card-right { width: 35%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .card-right canvas { width: 75px !important; height: 75px !important; border-radius: 4px; }
-        .qr-id { font-size: 9px; font-weight: bold; color: #333; margin-top: 2px; }
+        .card-right canvas { width: 70px !important; height: 70px !important; border-radius: 4px; }
+        .qr-id { font-size: 8.5px; font-weight: bold; color: #333; margin-top: 2px; }
 
         @media print {
             body { background: none; padding: 0; }
@@ -222,8 +223,8 @@
                         <div class="santri-detail"><b>Kelas:</b> ${kelas}</div>
                         <div class="card-notes">
                             * Kartu ini berfungsi sebagai Kartu Santri<br>
-                            ** Kartu ini juga berfungsi sebagai Kartu Peserta Ujian<br>
-                            *** Kartu ini juga berfungsi sebagai Kartu Scan Kehadiran di pondok
+                            ** Kartu ini berfungsi sebagai Kartu Peserta Ujian<br>
+                            *** Kartu ini berfungsi sebagai Kartu Scan Kehadiran
                         </div>
                     </div>
                     <div class="card-right">
@@ -236,7 +237,7 @@
 
             new QRious({
                 element: document.getElementById(`qr-${index}`),
-                size: 100,
+                size: 90,
                 value: id
             });
         });
