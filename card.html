@@ -101,7 +101,7 @@
             line-height: 1.1;
         }
         .pondok-sub {
-            font-size: 8px;
+            font-size: 7.5px;
             color: #555;
         }
         
@@ -137,9 +137,6 @@
         <label>Pengaturan Identitas Pesantren:</label>
         <label for="namaPesantrenInput" style="font-size: 13px; font-weight: normal;">Nama Pesantren:</label>
         <input type="text" id="namaPesantrenInput" value="Pondok Pesantren Darul Amien" placeholder="Masukkan nama pesantren...">
-        
-        <label for="logoUrlInput" style="font-size: 13px; font-weight: normal;">Link URL Logo Pesantren (Opsional):</label>
-        <input type="text" id="logoUrlInput" value="https://lh3.googleusercontent.com/d/1dvYhUaUyFGMoInZlAyo25nxZDNmD6o9W" placeholder="Tempel link gambar logo di sini...">
     </div>
 
     <div class="form-group">
@@ -161,6 +158,9 @@
 </div>
 
 <script>
+    // Logo pondok ditetapkan permanen di sini
+    const FIXED_LOGO_URL = "https://lh3.googleusercontent.com/d/1dvYhUaUyFGMoInZlAyo25nxZDNmD6o9W";
+
     function downloadTemplate() {
         const templateData = [
             { id_santri: "23-1172", nama: "Ahmad Bushiri", kelas: "Kelas 4A" },
@@ -194,7 +194,6 @@
         wrapper.innerHTML = '';
 
         let namaPesantren = document.getElementById('namaPesantrenInput').value;
-        let logoUrl = document.getElementById('logoUrlInput').value;
 
         if (data.length === 0) {
             wrapper.innerHTML = '<p style="text-align: center; color: red;">File kosong atau format kolom tidak dikenali!</p>';
@@ -210,10 +209,10 @@
             cardDiv.className = 'card-preview';
             cardDiv.innerHTML = `
                 <div class="card-header">
-                    <img src="${logoUrl}" class="card-logo" onerror="this.style.display='none'">
+                    <img src="${FIXED_LOGO_URL}" class="card-logo" onerror="this.style.display='none'">
                     <div>
                         <div class="pondok-title">${namaPesantren}</div>
-                        <div class="pondok-sub">Kartu Identitas Resmi Gerbang Santri</div>
+                        <div class="pondok-sub">Kartu Kehadiran di Lingkungan Kemadrasahan</div>
                     </div>
                 </div>
                 <div class="card-body">
