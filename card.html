@@ -259,7 +259,7 @@
         data.forEach((item, index) => {
             let id = String(item.id_santri || item.ID || item.id || `SANTRI-${index+1}`).trim();
             let nama = String(item.nama || item.Nama || 'Tanpa Nama').trim();
-            let kelas = String(item.kelas || item.Kelas || 'Kelas -').trim();
+            // Kolom kelas tetap dibaca dari excel jika nanti dibutuhkan, namun sengaja tidak dimasukkan ke dalam HTML kartu di bawah.
 
             let cardDiv = document.createElement('div');
             cardDiv.className = 'card-preview';
@@ -275,7 +275,6 @@
                     <div class="card-left">
                         <div class="santri-name">${nama}</div>
                         <div class="santri-detail"><b>ID:</b> ${id}</div>
-                        <div class="santri-detail"><b>Kelas:</b> ${kelas}</div>
                         <div class="card-notes">
                             * Kartu ini berfungsi sebagai Kartu Santri<br>
                             ** Kartu ini berfungsi sebagai Kartu Peserta Ujian<br>
