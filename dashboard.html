@@ -137,9 +137,12 @@
         try {
             let response = await fetch(WEB_APP_URL);
             listMasterSantri = await response.json();
+            
+            console.log("Data Master Santri Berhasil Dimuat:", listMasterSantri);
+            
             document.getElementById("dbStatus").style.display = "none";
         } catch (error) {
-            console.error(error);
+            console.error("Gagal memuat database:", error);
             document.getElementById("dbStatus").innerText = "Gagal memuat database santri. Periksa koneksi/URL.";
             document.getElementById("dbStatus").style.color = "red";
         }
@@ -154,24 +157,28 @@
         let petugas = document.getElementById("petugas").value.trim();
         let statusDipilih = document.getElementById("statusScan").value;
 
+        console.log("QR Code Terbaca (Mentah):", JSON.stringify(decodedText));
+        console.log("ID Santri Setelah di-trim:", JSON.stringify(idSantriScan));
+
         if (!petugas) {
             showAlert("Nama petugas belum diisi!", "error");
             isProcessing = false;
             return;
         }
 
-        // Pencarian data santri yang lebih fleksibel mencakup id_santri atau id
         let santri = listMasterSantri.find(s => {
             let sId = String(s.id_santri || s.id || "").trim();
             return sId === idSantriScan;
         });
 
         if (!santri) {
+            console.warn("Santri tidak ditemukan di dalam array listMasterSantri.");
             showAlert(`Database tidak ditemukan! ID: ${idSantriScan} tidak terdaftar.`, "error");
             setTimeout(() => { isProcessing = false; }, 3000);
             return;
         }
 
+        console.log("Santri Ditemukan:", santri);
         showAlert(`Memproses absensi untuk ${santri.nama}...`, "success");
 
         try {
