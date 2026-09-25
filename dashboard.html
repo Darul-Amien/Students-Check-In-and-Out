@@ -133,20 +133,22 @@
 
     async function loadDashboardData() {
         try {
-            // 1. Ambil data master seluruh santri dari Sheet2
+            // 1. Ambil data master seluruh santri dari Database_Santri
             let resSantri = await fetch(WEB_APP_URL);
             let listSantri = await resSantri.json();
 
-            // 2. Ambil data riwayat log absensi dari Sheet1
+            // 2. Ambil data riwayat log absensi dari Log_Check_in
             let resLogs = await fetch(WEB_APP_URL + "?action=logs");
             let logs = await resLogs.json();
 
             let statusTerakhirMap = {};
             logs.forEach(log => {
-                statusTerakhirMap[log.id] = {
-                    status: log.status,
-                    waktu: log.waktu,
-                    pencatat: log.pencatat
+                // Menyesuaikan dengan kunci log ("ID Santri" atau "id_santri" tergantung dari Apps Script Anda)
+                let santriId = log.id_santri || log.id || log["ID Santri"];
+                statusTerakhirMap[santriId] = {
+                    status: log.status || log.Status,
+                    waktu: log.waktu || log.Waktu,
+                    pencatat: log.pencatat || log.Pencatat
                 };
             });
 
@@ -155,12 +157,12 @@
             let outsideCount = 0;
 
             listSantri.forEach(santri => {
-                let lastLog = statusTerakhirMap[santri.id];
+                let sId = santri.id_santri || santri.id;
+                let lastLog = statusTerakhirMap[sId];
                 
                 let statusTerakhir = lastLog ? lastLog.status : "Masuk";
-                let waktuAktivitas = lastLog ? new Date(lastLog.waktu).toLocaleString('id-ID') : "Belum pernah scan";
+                let waktuAktivitas = lastLog && lastLog.waktu ? new Date(lastLog.waktu).toLocaleString('id-ID') : "Belum pernah scan";
                 let pencatat = lastLog ? lastLog.pencatat : "-";
-                // Mengambil data kelas dari Sheet2 (jika kolom kelas ada di indeks ke-2 / kolom C)
                 let kelasSantri = santri.kelas || "-";
 
                 if (statusTerakhir === "Masuk") {
@@ -170,8 +172,8 @@
                 }
 
                 globalSantriData.push({
-                    id: santri.id,
-                    nama: santri.nama,
+                    id: sId,
+                    nama: santri.nama || santri.Nama,
                     kelas: kelasSantri,
                     status: statusTerakhir,
                     waktu: waktuAktivitas,
@@ -187,6 +189,7 @@
 
             renderTable();
         } catch (error) {
+            console.error(error);
             document.getElementById("loadingText").innerText = "Gagal memuat data dashboard.";
             document.getElementById("loadingText").style.color = "red";
         }
