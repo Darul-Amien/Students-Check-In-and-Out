@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Gerbang Pondok</title>
+    <!-- Memuat library QR Code Scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        #reader {
+            width: 100%;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .result-box {
+            padding: 15px;
+            background: #e8f4fd;
+            border-left: 5px solid #3498db;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Absensi Gerbang Santri</h2>
+    
+    <div class="form-group">
+        <label for="pencatat">Nama Petugas / Penjaga:</label>
+        <input type="text" id="pencatat" placeholder="Contoh: Ustadz Ahmad" value="">
+    </div>
+
+    <div class="form-group">
+        <label for="status">Status Kehadiran:</label>
+        <select id="status">
+            <option value="Masuk">Masuk ke Pondok</option>
+            <option value="Keluar">Keluar dari Pondok</option>
+        </select>
+    </div>
+
+    <label>Scan QR Code Kartu Santri:</label>
+    <div id="reader"></div>
+
+    <div id="resultBox" class="result-box">
+        <strong>Status Terakhir:</strong>
+        <p id="resultText">Belum ada scan.</p>
+    </div>
+</div>
+
+<script>
+    // CONTOH DATABASE SANTRI SEMENTARA (ID dan Nama)
+    // Nanti ID ini yang dicetak menjadi QR Code di kartu santri
+    const databaseSantri = {
+        "SANTRI-001": "Ahmad Fauzi",
+        "SANTRI-002": "Muhammad Rizki",
+        "SANTRI-003": "Siti Aminah",
+        "SANTRI-004": "Fatimah Zahra"
+    };
+
+    // GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxjL6a_vHIsXX7eolD-7cdUge-s12b2vF-bnPIw7b43-UeDDDwctQCglcj-q3Ra6-c2w/exec";
+
+    let lastScannedId = "";
+    let lastScanTime = 0;
+
+    function onScanSuccess(decodedText, decodedResult) {
+        // Mencegah scan ganda dalam waktu 3 detik untuk kartu yang sama
+        const currentTime = new Date().getTime();
+        if (decodedText === lastScannedId && (currentTime - lastScanTime < 3000)) {
+            return;
+        }
+        
+        lastScannedId = decodedText;
+        lastScanTime = currentTime;
+
+        let namaSantri = databaseSantri[decodedText];
+        
+        if (!namaSantri) {
+            showResult(`ID ${decodedText} tidak ditemukan di database!`, "error");
+            return;
+        }
+
+        let status = document.getElementById("status").value;
+        let pencatat = document.getElementById("pencatat").value || "Petugas Jaga";
+
+        showResult(`Mengirim data: ${namaSantri} (${status})...`, "");
+
+        // Kirim data ke Google Sheets via Apps Script
+        const dataToSend = {
+            idSantri: decodedText,
+            nama: namaSantri,
+            status: status,
+            pencatat: pencatat
+        };
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            mode: "no-cors", // Diperlukan untuk Google Apps Script Web App
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(dataToSend)
+        })
+        .then(() => {
+            showResult(`BERHASIL! <br><b>${namaSantri}</b> tercatat <b>${status}</b>.`, "success");
+            // Mainkan suara beep sederhana jika didukung browser (opsional)
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(200);
+            }
+        })
+        .catch(error => {
+            showResult(`Gagal mengirim data: ${error}`, "error");
+        });
+    }
+
+    function showResult(message, type) {
+        const box = document.getElementById("resultBox");
+        const text = document.getElementById("resultText");
+        box.style.display = "block";
+        box.className = "result-box " + type;
+        text.innerHTML = message;
+    }
+
+    // Inisialisasi Kamera Scanner
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+</script>
+
+</body>
+</html>
