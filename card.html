@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetak Kartu Santri & QR Code</title>
+    <title>Cetak Masal Kartu Santri & QR Code</title>
     <!-- Memuat library qrious untuk membuat QR Code secara otomatis -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <style>
@@ -15,7 +15,7 @@
             color: #333;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             background: #fff;
             padding: 20px;
@@ -31,13 +31,15 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input {
+        textarea {
             width: 100%;
+            height: 120px;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-sizing: border-box;
-            font-size: 16px;
+            font-size: 14px;
+            font-family: monospace;
         }
         button {
             width: 100%;
@@ -49,24 +51,38 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            margin-bottom: 10px;
         }
         button:hover { background-color: #219653; }
-        
+        .btn-print {
+            background-color: #2980b9;
+        }
+        .btn-print:hover { background-color: #2471a3; }
+
+        /* Wadah untuk menampung banyak kartu */
+        #cardsWrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
         /* Tampilan Kartu Santri (ID Card) */
         .card-preview {
-            width: 320px;
-            height: 200px;
+            width: 310px;
+            height: 190px;
             border: 2px solid #2c3e50;
-            border-radius: 12px;
-            margin: 20px auto;
-            padding: 15px;
+            border-radius: 10px;
+            padding: 12px;
             background: linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
             page-break-inside: avoid;
+            break-inside: avoid;
         }
         .card-left {
             width: 60%;
@@ -75,21 +91,21 @@
             justify-content: center;
         }
         .pondok-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             color: #27ae60;
             text-transform: uppercase;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         .santri-name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: #2c3e50;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             line-height: 1.2;
         }
         .santri-detail {
-            font-size: 12px;
+            font-size: 11px;
             color: #555;
             margin-bottom: 2px;
         }
@@ -102,34 +118,30 @@
             justify-content: center;
         }
         .card-right canvas {
-            width: 95px !important;
-            height: 95px !important;
+            width: 85px !important;
+            height: 85px !important;
             border-radius: 4px;
         }
         .qr-id {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
             color: #333;
-            margin-top: 4px;
+            margin-top: 3px;
         }
-
-        /* Tombol Cetak Khusus */
-        .btn-print {
-            background-color: #2980b9;
-            margin-top: 10px;
-        }
-        .btn-print:hover { background-color: #2471a3; }
 
         /* Pengaturan saat dicetak (Print Mode) */
         @media print {
             body { background: none; padding: 0; }
-            .container > *:not(#cardContainer) {
-                display: none; /* Sembunyikan form saat dicetak */
+            .container > *:not(#cardsWrapper) {
+                display: none; /* Sembunyikan form dan tombol saat dicetak */
+            }
+            #cardsWrapper {
+                gap: 5px;
             }
             .card-preview {
                 border: 1.5px solid #000;
                 box-shadow: none;
-                margin: 10px auto;
+                margin: 5px;
             }
         }
     </style>
@@ -137,68 +149,72 @@
 <body>
 
 <div class="container">
-    <h2>Generator Kartu Santri</h2>
+    <h2>Generator Masal Kartu Santri (200+ Data)</h2>
     
     <div class="form-group">
-        <label for="inputID">ID Santri (untuk Barcode/QR):</label>
-        <input type="text" id="inputID" placeholder="Contoh: SANTRI-001" value="SANTRI-001">
+        <label for="inputData">Masukkan Data Santri (Format: <code>ID | Nama | Kelas/Kamar</code> per baris):</label>
+        <textarea id="inputData">SANTRI-001 | Ahmad Fauzi | Kelas 7 / Asrama A
+SANTRI-002 | Muhammad Rizki | Kelas 7 / Asrama A
+SANTRI-003 | Siti Aminah | Kelas 8 / Asrama B
+SANTRI-004 | Fatimah Zahra | Kelas 9 / Asrama B</textarea>
+        <small style="color: #666;">*Anda bisa copy-paste langsung dari Excel (kolom ID, Nama, Kelas) ke sini, batasi dengan garis lurus (|) atau tab.</small>
     </div>
 
-    <div class="form-group">
-        <label for="inputNama">Nama Lengkap Santri:</label>
-        <input type="text" id="inputNama" placeholder="Contoh: Ahmad Fauzi" value="Ahmad Fauzi">
-    </div>
+    <button onclick="generateAllCards()">Generate Semua Kartu</button>
+    <button class="btn-print" onclick="window.print()">Cetak Semua Kartu (Print)</button>
 
-    <div class="form-group">
-        <label for="inputKelas">Kelas / Kamar:</label>
-        <input type="text" id="inputKelas" placeholder="Contoh: Kelas 7 / Asrama A" value="Kelas 7 / Asrama A">
-    </div>
-
-    <button onclick="generateCard()">Perbarui Kartu</button>
-
-    <h3>Pratinjau Kartu</h3>
+    <h3>Pratinjau Kartu Massal</h3>
     
-    <!-- Area Kartu yang akan tampil dan bisa dicetak -->
-    <div id="cardContainer">
-        <div class="card-preview">
-            <div class="card-left">
-                <div class="pondok-title">Pondok Pesantren</div>
-                <div id="pReviewNama" class="santri-name">Ahmad Fauzi</div>
-                <div id="pReviewKelas" class="santri-detail">Kelas 7 / Asrama A</div>
-                <div class="santri-detail" style="margin-top: 10px; font-size: 10px; font-style: italic;">*Bawa kartu ini saat keluar/masuk gerbang</div>
-            </div>
-            <div class="card-right">
-                <!-- Elemen Canvas tempat QR Code otomatis digambar -->
-                <canvas id="qrCanvas"></canvas>
-                <div id="pReviewID" class="qr-id">SANTRI-001</div>
-            </div>
-        </div>
-    </div>
-
-    <button class="btn-print" onclick="window.print()">Cetak Kartu (Print)</button>
+    <!-- Tempat semua kartu akan digenerate secara otomatis -->
+    <div id="cardsWrapper"></div>
 </div>
 
 <script>
-    // Inisialisasi QR Code pertama kali saat halaman dibuka
-    var qr = new QRious({
-        element: document.getElementById('qrCanvas'),
-        size: 150,
-        value: 'SANTRI-001'
-    });
+    function generateAllCards() {
+        const rawData = document.getElementById('inputData').value.trim();
+        const lines = rawData.split('\n');
+        const wrapper = document.getElementById('cardsWrapper');
+        
+        // Bersihkan kontainer sebelumnya
+        wrapper.innerHTML = '';
 
-    function generateCard() {
-        let id = document.getElementById('inputID').value || 'SANTRI-000';
-        let nama = document.getElementById('inputNama').value || 'Nama Santri';
-        let kelas = document.getElementById('inputKelas').value || 'Kelas';
+        lines.forEach((line, index) => {
+            // Pisahkan berdasarkan tanda kurung siku/garis vertikal atau tab
+            let parts = line.split('|').map(p => p.trim());
+            if (parts.length < 3) return; // Lewatkan baris yang tidak lengkap
 
-        // Update teks pada kartu
-        document.getElementById('pReviewNama').innerText = nama;
-        document.getElementById('pReviewKelas').innerText = kelas;
-        document.getElementById('pReviewID').innerText = id;
+            let id = parts[0];
+            let nama = parts[1];
+            let kelas = parts[2];
 
-        // Update isi QR Code secara otomatis
-        qr.value = id;
+            // Buat elemen HTML untuk kartu
+            let cardDiv = document.createElement('div');
+            cardDiv.className = 'card-preview';
+            cardDiv.innerHTML = `
+                <div class="card-left">
+                    <div class="pondok-title">Pondok Pesantren</div>
+                    <div class="santri-name">${nama}</div>
+                    <div class="santri-detail">${kelas}</div>
+                    <div class="santri-detail" style="margin-top: 6px; font-size: 9px; font-style: italic;">*Bawa kartu saat di gerbang</div>
+                </div>
+                <div class="card-right">
+                    <canvas id="qr-${index}"></canvas>
+                    <div class="qr-id">${id}</div>
+                </div>
+            `;
+            wrapper.appendChild(cardDiv);
+
+            // Generate QR Code menggunakan library QRious ke dalam canvas kartu tersebut
+            new QRious({
+                element: document.getElementById(`qr-${index}`),
+                size: 120,
+                value: id
+            });
+        });
     }
+
+    // Jalankan sekali saat halaman pertama kali dibuka
+    window.onload = generateAllCards;
 </script>
 
 </body>
