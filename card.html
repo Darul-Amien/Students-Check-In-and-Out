@@ -112,9 +112,10 @@
             flex: 1;
             margin-top: 5px;
         }
-        .card-left { width: 62%; }
-        .santri-name { font-size: 14px; font-weight: bold; color: #2c3e50; margin-bottom: 3px; line-height: 1.2; }
-        .santri-detail { font-size: 11px; color: #444; margin-bottom: 2px; }
+        .card-left { width: 63%; }
+        .santri-name { font-size: 13px; font-weight: bold; color: #2c3e50; margin-bottom: 2px; line-height: 1.2; }
+        .santri-detail { font-size: 10px; color: #444; margin-bottom: 1px; }
+        .card-notes { font-size: 6.5px; color: #555; margin-top: 3px; line-height: 1.2; font-style: italic; }
         
         .card-right { width: 35%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .card-right canvas { width: 75px !important; height: 75px !important; border-radius: 4px; }
@@ -158,7 +159,6 @@
 </div>
 
 <script>
-    // Logo pondok ditetapkan permanen di sini
     const FIXED_LOGO_URL = "https://lh3.googleusercontent.com/d/1dvYhUaUyFGMoInZlAyo25nxZDNmD6o9W";
 
     function downloadTemplate() {
@@ -212,7 +212,7 @@
                     <img src="${FIXED_LOGO_URL}" class="card-logo" onerror="this.style.display='none'">
                     <div>
                         <div class="pondok-title">${namaPesantren}</div>
-                        <div class="pondok-sub">Kartu Kehadiran di Lingkungan Kemadrasahan</div>
+                        <div class="pondok-sub">Desa Teluk Labak Kecamatan Daha Utara HSS</div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -220,7 +220,11 @@
                         <div class="santri-name">${nama}</div>
                         <div class="santri-detail"><b>ID:</b> ${id}</div>
                         <div class="santri-detail"><b>Kelas:</b> ${kelas}</div>
-                        <div class="santri-detail" style="margin-top: 4px; font-size: 8px; font-style: italic; color: #666;">*Wajib dibawa saat di gerbang</div>
+                        <div class="card-notes">
+                            * Kartu ini berfungsi sebagai Kartu Santri<br>
+                            ** Kartu ini juga berfungsi sebagai Kartu Peserta Ujian<br>
+                            *** Kartu ini juga berfungsi sebagai Kartu Scan Kehadiran di pondok
+                        </div>
                     </div>
                     <div class="card-right">
                         <canvas id="qr-${index}"></canvas>
