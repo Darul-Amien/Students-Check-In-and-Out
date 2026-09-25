@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Monitoring Santri</title>
+    <title>Scanner QR Code Absensi Santri</title>
+    <!-- Memuat library Html5Qrcode Scanner -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,221 +15,196 @@
             color: #333;
         }
         .container {
-            max-width: 900px;
+            max-width: 600px;
             margin: 0 auto;
             background: #fff;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        h2 { text-align: center; color: #2c3e50; }
-        .stats-box {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            flex: 1;
-            padding: 15px;
-            border-radius: 8px;
-            color: white;
-            text-align: center;
-        }
-        .card-inside { background-color: #27ae60; }
-        .card-outside { background-color: #e67e22; }
-        .stat-number { font-size: 24px; font-weight: bold; margin-top: 5px; }
-        
-        .filter-section {
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        .form-group {
             margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f8f9fa;
-            padding: 10px 15px;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
         }
-        .filter-section select {
-            padding: 8px;
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
             font-size: 14px;
+            box-sizing: border-box;
         }
-
-        table {
+        #reader {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 5px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #ddd;
+            margin-bottom: 15px;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-            font-size: 14px;
-        }
-        th { background-color: #2c3e50; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .loading { text-align: center; color: #7f8c8d; font-style: italic; margin: 20px 0; }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            color: white;
-            font-size: 12px;
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin-top: 15px;
             font-weight: bold;
+            text-align: center;
+            display: none;
         }
-        .badge-inside { background-color: #27ae60; }
-        .badge-outside { background-color: #e67e22; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading-db {
+            text-align: center;
+            font-style: italic;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Dashboard Monitoring Gerbang Pondok</h2>
+    <h2>Scanner Gerbang Pondok</h2>
     
-    <div class="stats-box">
-        <div class="stat-card card-inside">
-            <div>Status: Di Dalam Pondok</div>
-            <div id="countInside" class="stat-number">0</div>
-        </div>
-        <div class="stat-card card-outside">
-            <div>Status: Di Luar Pondok</div>
-            <div id="countOutside" class="stat-number">0</div>
-        </div>
+    <div id="dbStatus" class="loading-db">Memuat database master santri...</div>
+
+    <div class="form-group">
+        <label for="petugas">Nama Petugas Penjaga:</label>
+        <input type="text" id="petugas" placeholder="Masukkan nama Anda..." value="Admin Gerbang">
     </div>
 
-    <div class="filter-section">
-        <h3 style="margin: 0; font-size: 16px; color: #2c3e50;">Daftar Status Seluruh Santri</h3>
-        <div>
-            <label for="statusFilter" style="font-size: 14px; font-weight: bold; margin-right: 5px;">Filter:</label>
-            <select id="statusFilter" onchange="renderTable()">
-                <option value="Semua">Semua Santri</option>
-                <option value="Masuk">Di Dalam Pondok</option>
-                <option value="Keluar">Di Luar Pondok</option>
-            </select>
-        </div>
+    <div class="form-group">
+        <label for="statusScan">Pilih Status Kehadiran:</label>
+        <select id="statusScan">
+            <option value="Masuk">Masuk ke Pondok (🏫)</option>
+            <option value="Keluar">Keluar dari Pondok (🚶‍♂️)</option>
+        </select>
     </div>
 
-    <div id="loadingText" class="loading">Memuat data master santri & aktivitas...</div>
-    
-    <table id="mainTable" style="display: none;">
-        <thead>
-            <tr>
-                <th>ID Santri</th>
-                <th>Nama Santri</th>
-                <th>Kelas</th>
-                <th>Status Terakhir</th>
-                <th>Waktu Aktivitas</th>
-                <th>Petugas</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            <!-- Data masuk otomatis -->
-        </tbody>
-    </table>
+    <!-- Area Kamera Scanner -->
+    <div id="reader"></div>
+
+    <!-- Notifikasi Hasil Scan -->
+    <div id="alertBox" class="alert"></div>
 </div>
 
 <script>
+    // URL Web App Google Apps Script Anda
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9k5HqsJDbDkd5jVhJL8tOALlWTV-m_3D37JzDLCy1i6KRaFwES640Ja3DXO1xFSlLTg/exec";
     
-    let globalSantriData = [];
+    let listMasterSantri = [];
+    let isProcessing = false;
 
-    async function loadDashboardData() {
+    // 1. Fungsi Text-to-Speech untuk suara "Terima kasih" di HP/Laptop
+    function ucapkanTerimaKasih(namaSantri) {
+        if ('speechSynthesis' in window) {
+            // Anda bisa menggunakan teks statis "Terima kasih" atau digabung dengan nama santri
+            let text = "Terima kasih, " + namaSantri;
+            let utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID'; // Mengatur bahasa ke Bahasa Indonesia
+            utterance.rate = 1.0;     // Kecepatan normal
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // 2. Ambil data master santri dari GAS saat halaman dibuka
+    async function loadMasterSantri() {
         try {
-            // 1. Ambil data master seluruh santri dari Database_Santri
-            let resSantri = await fetch(WEB_APP_URL);
-            let listSantri = await resSantri.json();
-
-            // 2. Ambil data riwayat log absensi dari Log_Check_in
-            let resLogs = await fetch(WEB_APP_URL + "?action=logs");
-            let logs = await resLogs.json();
-
-            let statusTerakhirMap = {};
-            logs.forEach(log => {
-                // Menyesuaikan dengan kunci log ("ID Santri" atau "id_santri" tergantung dari Apps Script Anda)
-                let santriId = log.id_santri || log.id || log["ID Santri"];
-                statusTerakhirMap[santriId] = {
-                    status: log.status || log.Status,
-                    waktu: log.waktu || log.Waktu,
-                    pencatat: log.pencatat || log.Pencatat
-                };
-            });
-
-            globalSantriData = [];
-            let insideCount = 0;
-            let outsideCount = 0;
-
-            listSantri.forEach(santri => {
-                let sId = santri.id_santri || santri.id;
-                let lastLog = statusTerakhirMap[sId];
-                
-                let statusTerakhir = lastLog ? lastLog.status : "Masuk";
-                let waktuAktivitas = lastLog && lastLog.waktu ? new Date(lastLog.waktu).toLocaleString('id-ID') : "Belum pernah scan";
-                let pencatat = lastLog ? lastLog.pencatat : "-";
-                let kelasSantri = santri.kelas || "-";
-
-                if (statusTerakhir === "Masuk") {
-                    insideCount++;
-                } else {
-                    outsideCount++;
-                }
-
-                globalSantriData.push({
-                    id: sId,
-                    nama: santri.nama || santri.Nama,
-                    kelas: kelasSantri,
-                    status: statusTerakhir,
-                    waktu: waktuAktivitas,
-                    pencatat: pencatat
-                });
-            });
-
-            document.getElementById("countInside").innerText = insideCount;
-            document.getElementById("countOutside").innerText = outsideCount;
-
-            document.getElementById("loadingText").style.display = "none";
-            document.getElementById("mainTable").style.display = "table";
-
-            renderTable();
+            let response = await fetch(WEB_APP_URL);
+            listMasterSantri = await response.json();
+            document.getElementById("dbStatus").style.display = "none";
         } catch (error) {
             console.error(error);
-            document.getElementById("loadingText").innerText = "Gagal memuat data dashboard.";
-            document.getElementById("loadingText").style.color = "red";
+            document.getElementById("dbStatus").innerText = "Gagal memuat database santri. Periksa koneksi/URL.";
+            document.getElementById("dbStatus").style.color = "red";
         }
     }
 
-    function renderTable() {
-        let filterValue = document.getElementById("statusFilter").value;
-        let tbody = document.getElementById("tableBody");
-        tbody.innerHTML = "";
+    // 3. Fungsi yang dieksekusi saat kamera berhasil membaca QR Code
+    async function onScanSuccess(decodedText) {
+        if (isProcessing) return; // Mencegah scan ganda berturut-turut
+        isProcessing = true;
 
-        let filteredData = globalSantriData.filter(item => {
-            if (filterValue === "Semua") return true;
-            return item.status === filterValue;
-        });
+        let idSantriScan = decodedText.trim();
+        let petugas = document.getElementById("petugas").value.trim();
+        let statusDipilih = document.getElementById("statusScan").value;
 
-        if (filteredData.length > 0) {
-            filteredData.forEach(item => {
-                let badgeClass = item.status === "Keluar" ? "badge-outside" : "badge-inside";
-                let tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${item.id || '-'}</td>
-                    <td><b>${item.nama}</b></td>
-                    <td>${item.kelas}</td>
-                    <td><span class="badge ${badgeClass}">${item.status}</span></td>
-                    <td>${item.waktu}</td>
-                    <td>${item.pencatat}</td>
-                `;
-                tbody.appendChild(tr);
+        if (!petugas) {
+            showAlert("Nama petugas belum diisi!", "error");
+            isProcessing = false;
+            return;
+        }
+
+        // Mencari data santri berdasarkan ID di array master (mendukung properti id atau id_santri)
+        let santri = listMasterSantri.find(s => String(s.id_santri || s.id).trim() === idSantriScan);
+
+        if (!santri) {
+            showAlert(`Database tidak ditemukan! ID: ${idSantriScan} tidak terdaftar.`, "error");
+            setTimeout(() => { isProcessing = false; }, 3000);
+            return;
+        }
+
+        showAlert(`Memproses absensi untuk ${santri.nama}...`, "success");
+
+        // Kirim data via POST ke Google Apps Script
+        try {
+            let payload = {
+                idSantri: santri.id_santri || santri.id,
+                nama: santri.nama,
+                status: statusDipilih,
+                pencatat: petugas
+            };
+
+            let response = await fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
             });
-        } else {
-            let tr = document.createElement("tr");
-            tr.innerHTML = `<td colspan="6" style="text-align: center; color: #7f8c8d; font-style: italic;">Tidak ada data untuk kategori ini.</td>`;
-            tbody.appendChild(tr);
+
+            let result = await response.json();
+
+            if (result.result === "success") {
+                showAlert(`✅ BERHASIL: ${santri.nama} (${statusDipilih})`, "success");
+                
+                // Memanggil suara konfirmasi otomatis
+                ucapkanTerimaKasih(santri.nama);
+            } else {
+                showAlert(`❌ GAGAL: ${result.message}`, "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showAlert("Terjadi kesalahan koneksi ke server.", "error");
         }
+
+        // Jeda waktu sebelum scanner aktif membaca kembali
+        setTimeout(() => {
+            isProcessing = false;
+            hideAlert();
+        }, 3500);
     }
 
-    loadDashboardData();
-    setInterval(loadDashboardData, 10000);
+    function showAlert(message, type) {
+        let alertBox = document.getElementById("alertBox");
+        alertBox.innerText = message;
+        alertBox.className = "alert " + (type === "success" ? "alert-success" : "alert-error");
+        alertBox.style.display = "block";
+    }
+
+    function hideAlert() {
+        document.getElementById("alertBox").style.display = "none";
+    }
+
+    // Jalankan pemuatan data master
+    loadMasterSantri();
+
+    // Inisialisasi kamera scanner QR
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", { fps: 10, qrbox: 250 }, false
+    );
+    html5QrcodeScanner.render(onScanSuccess);
 </script>
 
 </body>
