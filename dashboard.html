@@ -13,7 +13,7 @@
             color: #333;
         }
         .container {
-            max-width: 850px;
+            max-width: 900px;
             margin: 0 auto;
             background: #fff;
             padding: 20px;
@@ -100,9 +100,9 @@
         <div>
             <label for="statusFilter" style="font-size: 14px; font-weight: bold; margin-right: 5px;">Filter:</label>
             <select id="statusFilter" onchange="renderTable()">
+                <option value="Semua">Semua Santri</option>
                 <option value="Masuk">Di Dalam Pondok</option>
                 <option value="Keluar">Di Luar Pondok</option>
-                <option value="Semua">Semua Santri</option>
             </select>
         </div>
     </div>
@@ -114,6 +114,7 @@
             <tr>
                 <th>ID Santri</th>
                 <th>Nama Santri</th>
+                <th>Kelas</th>
                 <th>Status Terakhir</th>
                 <th>Waktu Aktivitas</th>
                 <th>Petugas</th>
@@ -140,7 +141,6 @@
             let resLogs = await fetch(WEB_APP_URL + "?action=logs");
             let logs = await resLogs.json();
 
-            // Petakan status terakhir berdasarkan log absensi
             let statusTerakhirMap = {};
             logs.forEach(log => {
                 statusTerakhirMap[log.id] = {
@@ -154,13 +154,14 @@
             let insideCount = 0;
             let outsideCount = 0;
 
-            // Gabungkan master santri dengan status terakhirnya
             listSantri.forEach(santri => {
                 let lastLog = statusTerakhirMap[santri.id];
                 
-                let statusTerakhir = lastLog ? lastLog.status : "Masuk"; // Default "Masuk" jika belum pernah scan
+                let statusTerakhir = lastLog ? lastLog.status : "Masuk";
                 let waktuAktivitas = lastLog ? new Date(lastLog.waktu).toLocaleString('id-ID') : "Belum pernah scan";
                 let pencatat = lastLog ? lastLog.pencatat : "-";
+                // Mengambil data kelas dari Sheet2 (jika kolom kelas ada di indeks ke-2 / kolom C)
+                let kelasSantri = santri.kelas || "-";
 
                 if (statusTerakhir === "Masuk") {
                     insideCount++;
@@ -171,13 +172,13 @@
                 globalSantriData.push({
                     id: santri.id,
                     nama: santri.nama,
+                    kelas: kelasSantri,
                     status: statusTerakhir,
                     waktu: waktuAktivitas,
                     pencatat: pencatat
                 });
             });
 
-            // Update angka di kartu statistik
             document.getElementById("countInside").innerText = insideCount;
             document.getElementById("countOutside").innerText = outsideCount;
 
@@ -186,7 +187,6 @@
 
             renderTable();
         } catch (error) {
-            document.getElementById("loadingTextミュニ") = "Gagal memuat data dashboard.";
             document.getElementById("loadingText").innerText = "Gagal memuat data dashboard.";
             document.getElementById("loadingText").style.color = "red";
         }
@@ -209,6 +209,7 @@
                 tr.innerHTML = `
                     <td>${item.id || '-'}</td>
                     <td><b>${item.nama}</b></td>
+                    <td>${item.kelas}</td>
                     <td><span class="badge ${badgeClass}">${item.status}</span></td>
                     <td>${item.waktu}</td>
                     <td>${item.pencatat}</td>
@@ -217,12 +218,11 @@
             });
         } else {
             let tr = document.createElement("tr");
-            tr.innerHTML = `<td colspan="5" style="text-align: center; color: #7f8c8d; font-style: italic;">Tidak ada data untuk kategori ini.</td>`;
+            tr.innerHTML = `<td colspan="6" style="text-align: center; color: #7f8c8d; font-style: italic;">Tidak ada data untuk kategori ini.</td>`;
             tbody.appendChild(tr);
         }
     }
 
-    // Muat data saat halaman dibuka & refresh otomatis setiap 10 detik
     loadDashboardData();
     setInterval(loadDashboardData, 10000);
 </script>
