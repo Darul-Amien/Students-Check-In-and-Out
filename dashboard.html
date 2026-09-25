@@ -13,7 +13,7 @@
             color: #333;
         }
         .container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 0 auto;
             background: #fff;
             padding: 20px;
@@ -96,18 +96,18 @@
     </div>
 
     <div class="filter-section">
-        <h3 id="tableTitle" style="margin: 0; font-size: 16px; color: #2c3e50;">Daftar Status Santri</h3>
+        <h3 style="margin: 0; font-size: 16px; color: #2c3e50;">Daftar Status Seluruh Santri</h3>
         <div>
             <label for="statusFilter" style="font-size: 14px; font-weight: bold; margin-right: 5px;">Filter:</label>
             <select id="statusFilter" onchange="renderTable()">
-                <option value="Keluar">Di Luar Pondok</option>
                 <option value="Masuk">Di Dalam Pondok</option>
+                <option value="Keluar">Di Luar Pondok</option>
                 <option value="Semua">Semua Santri</option>
             </select>
         </div>
     </div>
 
-    <div id="loadingText" class="loading">Memuat data aktivitas...</div>
+    <div id="loadingText" class="loading">Memuat data master santri & aktivitas...</div>
     
     <table id="mainTable" style="display: none;">
         <thead>
@@ -130,51 +130,66 @@
     
     let globalSantriData = [];
 
-    function loadDashboardData() {
-        fetch(WEB_APP_URL + "?action=logs")
-            .then(response => response.json())
-            .then(logs => {
-                let statusTerakhirSantri = {};
+    async function loadDashboardData() {
+        try {
+            // 1. Ambil data master seluruh santri dari Sheet2
+            let resSantri = await fetch(WEB_APP_URL);
+            let listSantri = await resSantri.json();
 
-                // Petakan status terakhir setiap santri
-                logs.forEach(log => {
-                    statusTerakhirSantri[log.id] = {
-                        id: log.id,
-                        nama: log.nama,
-                        status: log.status,
-                        waktu: log.waktu,
-                        pencatat: log.pencatat
-                    };
-                });
+            // 2. Ambil data riwayat log absensi dari Sheet1
+            let resLogs = await fetch(WEB_APP_URL + "?action=logs");
+            let logs = await resLogs.json();
 
-                globalSantriData = [];
-                let insideCount = 0;
-                let outsideCount = 0;
+            // Petakan status terakhir berdasarkan log absensi
+            let statusTerakhirMap = {};
+            logs.forEach(log => {
+                statusTerakhirMap[log.id] = {
+                    status: log.status,
+                    waktu: log.waktu,
+                    pencatat: log.pencatat
+                };
+            });
 
-                for (let id in statusTerakhirSantri) {
-                    let data = statusTerakhirSantri[id];
-                    globalSantriData.push(data);
-                    if (data.status === "Keluar") {
-                        outsideCount++;
-                    } else {
-                        insideCount++;
-                    }
+            globalSantriData = [];
+            let insideCount = 0;
+            let outsideCount = 0;
+
+            // Gabungkan master santri dengan status terakhirnya
+            listSantri.forEach(santri => {
+                let lastLog = statusTerakhirMap[santri.id];
+                
+                let statusTerakhir = lastLog ? lastLog.status : "Masuk"; // Default "Masuk" jika belum pernah scan
+                let waktuAktivitas = lastLog ? new Date(lastLog.waktu).toLocaleString('id-ID') : "Belum pernah scan";
+                let pencatat = lastLog ? lastLog.pencatat : "-";
+
+                if (statusTerakhir === "Masuk") {
+                    insideCount++;
+                } else {
+                    outsideCount++;
                 }
 
-                // Update angka kartu statistik
-                document.getElementById("countInside").innerText = insideCount;
-                document.getElementById("countOutside").innerText = outsideCount;
-
-                document.getElementById("loadingText").style.display = "none";
-                document.getElementById("mainTable").style.display = "table";
-
-                // Render tabel sesuai pilihan filter saat ini
-                renderTable();
-            })
-            .catch(error => {
-                document.getElementById("loadingText").innerText = "Gagal memuat data dashboard.";
-                document.getElementById("loadingText").style.color = "red";
+                globalSantriData.push({
+                    id: santri.id,
+                    nama: santri.nama,
+                    status: statusTerakhir,
+                    waktu: waktuAktivitas,
+                    pencatat: pencatat
+                });
             });
+
+            // Update angka di kartu statistik
+            document.getElementById("countInside").innerText = insideCount;
+            document.getElementById("countOutside").innerText = outsideCount;
+
+            document.getElementById("loadingText").style.display = "none";
+            document.getElementById("mainTable").style.display = "table";
+
+            renderTable();
+        } catch (error) {
+            document.getElementById("loadingTextミュニ") = "Gagal memuat data dashboard.";
+            document.getElementById("loadingText").innerText = "Gagal memuat data dashboard.";
+            document.getElementById("loadingText").style.color = "red";
+        }
     }
 
     function renderTable() {
@@ -195,7 +210,7 @@
                     <td>${item.id || '-'}</td>
                     <td><b>${item.nama}</b></td>
                     <td><span class="badge ${badgeClass}">${item.status}</span></td>
-                    <td>${new Date(item.waktu).toLocaleString('id-ID')}</td>
+                    <td>${item.waktu}</td>
                     <td>${item.pencatat}</td>
                 `;
                 tbody.appendChild(tr);
