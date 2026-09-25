@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Monitoring Santri</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        .stats-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+        .card-inside { background-color: #27ae60; }
+        .card-outside { background-color: #e67e22; }
+        .stat-number { font-size: 24px; font-weight: bold; margin-top: 5px; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th { background-color: #2c3e50; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .loading { text-align: center; color: #7f8c8d; font-style: italic; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Dashboard Monitoring Gerbang Pondok</h2>
+    
+    <div class="stats-box">
+        <div class="stat-card card-inside">
+            <div>Status: Di Dalam Pondok</div>
+            <div id="countInside" class="stat-number">0</div>
+        </div>
+        <div class="stat-card card-outside">
+            <div>Status: Di Luar Pondok</div>
+            <div id="countOutside" class="stat-number">0</div>
+        </div>
+    </div>
+
+    <h3>Daftar Santri yang Sedang di Luar Pondok</h3>
+    <div id="loadingText" class="loading">Memuat data aktivitas...</div>
+    
+    <table id="outsideTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>ID Santri</th>
+                <th>Nama Santri</th>
+                <th>Waktu Keluar</th>
+                <th>Petugas</th>
+            </tr>
+        </thead>
+        <tbody id="outsideTableBody">
+            <!-- Data akan masuk otomatis di sini -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Ganti dengan URL Web App Google Apps Script Anda yang sama
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9k5HqsJDbDkd5jVhJL8tOALlWTV-m_3D37JzDLCy1i6KRaFwES640Ja3DXO1xFSlLTg/exec";
+
+    function loadDashboardData() {
+        // Kita bisa menambahkan parameter aksi atau mengambil seluruh log Sheet1
+        // Untuk saat ini, kita tarik data dari Web App (kita bisa kustomisasi doGet untuk kirim log Sheet1 jika perlu)
+        fetch(WEB_APP_URL + "?action=logs")
+            .then(response => response.json())
+            .then(data => {
+                // Logika pengolahan data status terakhir per santri akan ditampilkan di sini
+                document.getElementById("loadingText").style.display = "none";
+                document.getElementById("outsideTable").style.display = "table";
+            })
+            .catch(error => {
+                document.getElementById("loadingText").innerText = "Gagal memuat data dashboard.";
+            });
+    }
+
+    // Refresh data otomatis setiap 10 detik
+    loadDashboardData();
+    setInterval(loadDashboardData, 10000);
+</script>
+
+</body>
+</html>
