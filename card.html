@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cetak Massal Kartu Santri & QR Code</title>
-    <!-- Memuat library qrious untuk QR Code dan SheetJS untuk membaca file Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -16,7 +15,7 @@
             color: #333;
         }
         .container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 0 auto;
             background: #fff;
             padding: 20px;
@@ -31,13 +30,14 @@
             border-radius: 8px;
             border: 1px dashed #cbd5e1;
         }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        input[type="file"] {
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 8px;
             margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
         button {
             width: 100%;
@@ -52,16 +52,11 @@
             margin-bottom: 10px;
         }
         button:hover { background-color: #219653; }
-        .btn-template {
-            background-color: #e67e22;
-        }
+        .btn-template { background-color: #e67e22; }
         .btn-template:hover { background-color: #d35400; }
-        .btn-print {
-            background-color: #2980b9;
-        }
+        .btn-print { background-color: #2980b9; }
         .btn-print:hover { background-color: #2471a3; }
 
-        /* Wadah untuk menampung banyak kartu */
         #cardsWrapper {
             display: flex;
             flex-wrap: wrap;
@@ -69,126 +64,114 @@
             justify-content: center;
             margin-top: 20px;
         }
-
-        /* Tampilan Kartu Santri (ID Card) */
+        
+        /* Desain Kartu Santri */
         .card-preview {
-            width: 310px;
-            height: 190px;
+            width: 330px;
+            height: 200px;
             border: 2px solid #2c3e50;
             border-radius: 10px;
-            padding: 12px;
+            padding: 10px 12px;
             background: linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
+            flex-direction: column;
             justify-content: space-between;
-            align-items: center;
             box-sizing: border-box;
             page-break-inside: avoid;
             break-inside: avoid;
         }
-        .card-left {
-            width: 60%;
+        .card-header {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            align-items: center;
+            border-bottom: 1.5px solid #27ae60;
+            padding-bottom: 5px;
+        }
+        .card-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            margin-right: 8px;
         }
         .pondok-title {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
             color: #27ae60;
             text-transform: uppercase;
-            margin-bottom: 4px;
+            line-height: 1.1;
         }
-        .santri-name {
-            font-size: 15px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 4px;
-            line-height: 1.2;
-        }
-        .santri-detail {
-            font-size: 11px;
+        .pondok-sub {
+            font-size: 8px;
             color: #555;
-            margin-bottom: 2px;
         }
-        .card-right {
-            width: 38%;
-            text-align: center;
+        
+        .card-body {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
+            flex: 1;
+            margin-top: 5px;
         }
-        .card-right canvas {
-            width: 85px !important;
-            height: 85px !important;
-            border-radius: 4px;
-        }
-        .qr-id {
-            font-size: 9px;
-            font-weight: bold;
-            color: #333;
-            margin-top: 3px;
-        }
+        .card-left { width: 62%; }
+        .santri-name { font-size: 14px; font-weight: bold; color: #2c3e50; margin-bottom: 3px; line-height: 1.2; }
+        .santri-detail { font-size: 11px; color: #444; margin-bottom: 2px; }
+        
+        .card-right { width: 35%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .card-right canvas { width: 75px !important; height: 75px !important; border-radius: 4px; }
+        .qr-id { font-size: 9px; font-weight: bold; color: #333; margin-top: 2px; }
 
-        /* Pengaturan saat dicetak (Print Mode) */
         @media print {
             body { background: none; padding: 0; }
-            .container > *:not(#cardsWrapper) {
-                display: none; /* Sembunyikan form dan tombol saat dicetak */
-            }
-            #cardsWrapper {
-                gap: 5px;
-            }
-            .card-preview {
-                border: 1.5px solid #000;
-                box-shadow: none;
-                margin: 5px;
-            }
+            .container > *:not(#cardsWrapper) { display: none; }
+            #cardsWrapper { gap: 5px; }
+            .card-preview { border: 1.5px solid #000; box-shadow: none; margin: 4px; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Generator Massal Kartu Santri</h2>
+    <h2>Generator Kartu Santri & QR Code</h2>
     
     <div class="form-group">
-        <label>Langkah 1: Download Template Excel</label>
-        <button class="btn-template" onclick="downloadTemplate()">Download Template Excel (.xlsx)</button>
-        <small style="color: #666; display: block; margin-top: 5px;">Isi data santri Anda ke dalam template tersebut (Kolom: id_santri, nama, kelas).</small>
+        <label>Pengaturan Identitas Pesantren:</label>
+        <label for="namaPesantrenInput" style="font-size: 13px; font-weight: normal;">Nama Pesantren:</label>
+        <input type="text" id="namaPesantrenInput" value="Pondok Pesantren Darul Amien" placeholder="Masukkan nama pesantren...">
+        
+        <label for="logoUrlInput" style="font-size: 13px; font-weight: normal;">Link URL Logo Pesantren (Opsional):</label>
+        <input type="text" id="logoUrlInput" value="https://drive.google.com/d/1dvYhUaUyFGMoInZlAyo25nxZDNmD6o9W" placeholder="Tempel link gambar logo di sini...">
     </div>
 
     <div class="form-group">
-        <label for="excelFile">Langkah 2: Upload File Excel yang Sudah Diisi</label>
+        <label>Langkah 1: Download & Isi Template Excel</label>
+        <button class="btn-template" onclick="downloadTemplate()">Download Template Excel (.xlsx)</button>
+    </div>
+
+    <div class="form-group">
+        <label for="excelFile">Langkah 2: Upload File Excel Santri</label>
         <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" onchange="handleExcelUpload(event)">
     </div>
 
     <button class="btn-print" onclick="window.print()">Cetak Semua Kartu (Print)</button>
 
-    <h3>Pratinjau Kartu Massal</h3>
+    <h3>Pratinjau Kartu</h3>
     <div id="cardsWrapper">
-        <p style="text-align: center; color: #777;">Belum ada data. Silakan upload file Excel data santri Anda di atas.</p>
+        <p style="text-align: center; color: #777;">Silakan upload file Excel data santri untuk melihat pratinjau kartu.</p>
     </div>
 </div>
 
 <script>
-    let santriDataList = [];
-
-    // Fungsi untuk mendownload template Excel kosong
     function downloadTemplate() {
         const templateData = [
-            { id_santri: "SANTRI-001", nama: "Ahmad Fauzi", kelas: "Kelas 7 / Asrama A" },
-            { id_santri: "SANTRI-002", nama: "Siti Aminah", kelas: "Kelas 8 / Asrama B" }
+            { id_santri: "23-1172", nama: "Ahmad Bushiri", kelas: "Kelas 4A" },
+            { id_santri: "23-1127", nama: "Ahmad Fitra Ramadhan", kelas: "Kelas 4A" }
         ];
-
         const worksheet = XLSX.utils.json_to_sheet(templateData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Data Santri");
         XLSX.writeFile(workbook, "Template_Kartu_Santri.xlsx");
     }
 
-    // Fungsi untuk membaca file Excel yang di-upload oleh pengguna
     function handleExcelUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -197,23 +180,21 @@
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            
-            // Ambil sheet pertama
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
-            
-            // Ubah ke format JSON
-            santriDataList = XLSX.utils.sheet_to_json(worksheet);
+            const santriDataList = XLSX.utils.sheet_to_json(worksheet);
             
             displayCards(santriDataList);
         };
         reader.readAsArrayBuffer(file);
     }
 
-    // Fungsi untuk menampilkan kartu-kartu ke layar
     function displayCards(data) {
         const wrapper = document.getElementById('cardsWrapper');
         wrapper.innerHTML = '';
+
+        let namaPesantren = document.getElementById('namaPesantrenInput').value;
+        let logoUrl = document.getElementById('logoUrlInput').value;
 
         if (data.length === 0) {
             wrapper.innerHTML = '<p style="text-align: center; color: red;">File kosong atau format kolom tidak dikenali!</p>';
@@ -221,32 +202,39 @@
         }
 
         data.forEach((item, index) => {
-            // Menyesuaikan dengan nama kolom di Excel (id_santri/id, nama, kelas)
-            let id = item.id_santri || item.ID || item.id || `SANTRI-00${index+1}`;
-            let nama = item.nama || item.Nama || 'Tanpa Nama';
-            let kelas = item.kelas || item.Kelas || 'Kelas -';
+            let id = String(item.id_santri || item.ID || item.id || `SANTRI-${index+1}`).trim();
+            let nama = String(item.nama || item.Nama || 'Tanpa Nama').trim();
+            let kelas = String(item.kelas || item.Kelas || 'Kelas -').trim();
 
             let cardDiv = document.createElement('div');
             cardDiv.className = 'card-preview';
             cardDiv.innerHTML = `
-                <div class="card-left">
-                    <div class="pondok-title">Pondok Pesantren</div>
-                    <div class="santri-name">${nama}</div>
-                    <div class="santri-detail">${kelas}</div>
-                    <div class="santri-detail" style="margin-top: 6px; font-size: 9px; font-style: italic;">*Bawa kartu saat di gerbang</div>
+                <div class="card-header">
+                    <img src="${logoUrl}" class="card-logo" onerror="this.style.display='none'">
+                    <div>
+                        <div class="pondok-title">${namaPesantren}</div>
+                        <div class="pondok-sub">Kartu Identitas Resmi Gerbang Santri</div>
+                    </div>
                 </div>
-                <div class="card-right">
-                    <canvas id="qr-${index}"></canvas>
-                    <div class="qr-id">${id}</div>
+                <div class="card-body">
+                    <div class="card-left">
+                        <div class="santri-name">${nama}</div>
+                        <div class="santri-detail"><b>ID:</b> ${id}</div>
+                        <div class="santri-detail"><b>Kelas:</b> ${kelas}</div>
+                        <div class="santri-detail" style="margin-top: 4px; font-size: 8px; font-style: italic; color: #666;">*Wajib dibawa saat di gerbang</div>
+                    </div>
+                    <div class="card-right">
+                        <canvas id="qr-${index}"></canvas>
+                        <div class="qr-id">${id}</div>
+                    </div>
                 </div>
             `;
             wrapper.appendChild(cardDiv);
 
-            // Generate QR Code untuk tiap kartu
             new QRious({
                 element: document.getElementById(`qr-${index}`),
-                size: 120,
-                value: String(id)
+                size: 100,
+                value: id
             });
         });
     }
