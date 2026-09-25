@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetak Masal Kartu Santri & QR Code</title>
-    <!-- Memuat library qrious untuk membuat QR Code secara otomatis -->
+    <title>Cetak Massal Kartu Santri & QR Code</title>
+    <!-- Memuat library qrious untuk QR Code dan SheetJS untuk membaca file Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,21 +26,18 @@
         h2, h3 { text-align: center; color: #2c3e50; }
         .form-group {
             margin-bottom: 15px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed #cbd5e1;
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: bold;
         }
-        textarea {
-            width: 100%;
-            height: 120px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 14px;
-            font-family: monospace;
+        input[type="file"] {
+            margin-bottom: 10px;
         }
         button {
             width: 100%;
@@ -54,6 +52,10 @@
             margin-bottom: 10px;
         }
         button:hover { background-color: #219653; }
+        .btn-template {
+            background-color: #e67e22;
+        }
+        .btn-template:hover { background-color: #d35400; }
         .btn-print {
             background-color: #2980b9;
         }
@@ -149,45 +151,81 @@
 <body>
 
 <div class="container">
-    <h2>Generator Masal Kartu Santri (200+ Data)</h2>
+    <h2>Generator Massal Kartu Santri</h2>
     
     <div class="form-group">
-        <label for="inputData">Masukkan Data Santri (Format: <code>ID | Nama | Kelas/Kamar</code> per baris):</label>
-        <textarea id="inputData">SANTRI-001 | Ahmad Fauzi | Kelas 7 / Asrama A
-SANTRI-002 | Muhammad Rizki | Kelas 7 / Asrama A
-SANTRI-003 | Siti Aminah | Kelas 8 / Asrama B
-SANTRI-004 | Fatimah Zahra | Kelas 9 / Asrama B</textarea>
-        <small style="color: #666;">*Anda bisa copy-paste langsung dari Excel (kolom ID, Nama, Kelas) ke sini, batasi dengan garis lurus (|) atau tab.</small>
+        <label>Langkah 1: Download Template Excel</label>
+        <button class="btn-template" onclick="downloadTemplate()">Download Template Excel (.xlsx)</button>
+        <small style="color: #666; display: block; margin-top: 5px;">Isi data santri Anda ke dalam template tersebut (Kolom: id_santri, nama, kelas).</small>
     </div>
 
-    <button onclick="generateAllCards()">Generate Semua Kartu</button>
+    <div class="form-group">
+        <label for="excelFile">Langkah 2: Upload File Excel yang Sudah Diisi</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" onchange="handleExcelUpload(event)">
+    </div>
+
     <button class="btn-print" onclick="window.print()">Cetak Semua Kartu (Print)</button>
 
     <h3>Pratinjau Kartu Massal</h3>
-    
-    <!-- Tempat semua kartu akan digenerate secara otomatis -->
-    <div id="cardsWrapper"></div>
+    <div id="cardsWrapper">
+        <p style="text-align: center; color: #777;">Belum ada data. Silakan upload file Excel data santri Anda di atas.</p>
+    </div>
 </div>
 
 <script>
-    function generateAllCards() {
-        const rawData = document.getElementById('inputData').value.trim();
-        const lines = rawData.split('\n');
+    let santriDataList = [];
+
+    // Fungsi untuk mendownload template Excel kosong
+    function downloadTemplate() {
+        const templateData = [
+            { id_santri: "SANTRI-001", nama: "Ahmad Fauzi", kelas: "Kelas 7 / Asrama A" },
+            { id_santri: "SANTRI-002", nama: "Siti Aminah", kelas: "Kelas 8 / Asrama B" }
+        ];
+
+        const worksheet = XLSX.utils.json_to_sheet(templateData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data Santri");
+        XLSX.writeFile(workbook, "Template_Kartu_Santri.xlsx");
+    }
+
+    // Fungsi untuk membaca file Excel yang di-upload oleh pengguna
+    function handleExcelUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // Ambil sheet pertama
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // Ubah ke format JSON
+            santriDataList = XLSX.utils.sheet_to_json(worksheet);
+            
+            displayCards(santriDataList);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Fungsi untuk menampilkan kartu-kartu ke layar
+    function displayCards(data) {
         const wrapper = document.getElementById('cardsWrapper');
-        
-        // Bersihkan kontainer sebelumnya
         wrapper.innerHTML = '';
 
-        lines.forEach((line, index) => {
-            // Pisahkan berdasarkan tanda kurung siku/garis vertikal atau tab
-            let parts = line.split('|').map(p => p.trim());
-            if (parts.length < 3) return; // Lewatkan baris yang tidak lengkap
+        if (data.length === 0) {
+            wrapper.innerHTML = '<p style="text-align: center; color: red;">File kosong atau format kolom tidak dikenali!</p>';
+            return;
+        }
 
-            let id = parts[0];
-            let nama = parts[1];
-            let kelas = parts[2];
+        data.forEach((item, index) => {
+            // Menyesuaikan dengan nama kolom di Excel (id_santri/id, nama, kelas)
+            let id = item.id_santri || item.ID || item.id || `SANTRI-00${index+1}`;
+            let nama = item.nama || item.Nama || 'Tanpa Nama';
+            let kelas = item.kelas || item.Kelas || 'Kelas -';
 
-            // Buat elemen HTML untuk kartu
             let cardDiv = document.createElement('div');
             cardDiv.className = 'card-preview';
             cardDiv.innerHTML = `
@@ -204,17 +242,14 @@ SANTRI-004 | Fatimah Zahra | Kelas 9 / Asrama B</textarea>
             `;
             wrapper.appendChild(cardDiv);
 
-            // Generate QR Code menggunakan library QRious ke dalam canvas kartu tersebut
+            // Generate QR Code untuk tiap kartu
             new QRious({
                 element: document.getElementById(`qr-${index}`),
                 size: 120,
-                value: id
+                value: String(id)
             });
         });
     }
-
-    // Jalankan sekali saat halaman pertama kali dibuka
-    window.onload = generateAllCards;
 </script>
 
 </body>
