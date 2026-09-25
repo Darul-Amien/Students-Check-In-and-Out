@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Absensi Gerbang Pondok</title>
-    <!-- Memuat library QR Code Scanner -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body {
@@ -23,15 +22,9 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         h2 { text-align: center; color: #2c3e50; }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        select, input {
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -39,12 +32,7 @@
             box-sizing: border-box;
             font-size: 16px;
         }
-        #reader {
-            width: 100%;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-bottom: 15px;
-        }
+        #reader { width: 100%; border-radius: 5px; overflow: hidden; margin-bottom: 15px; }
         .result-box {
             padding: 15px;
             background: #e8f4fd;
@@ -55,6 +43,7 @@
         }
         .success { background: #d4edda; border-color: #28a745; color: #155724; }
         .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .loading-db { font-size: 13px; color: #e67e22; margin-bottom: 10px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -62,15 +51,15 @@
 <div class="container">
     <h2>Absensi Gerbang Pondok</h2>
     
-    <!-- Bagian Petugas diubah menjadi Dropdown -->
+    <div id="dbStatus" class="loading-db">Memuat database santri dari Google Sheets...</div>
+
     <div class="form-group">
         <label for="pencatat">Nama Petugas / Penjaga:</label>
         <select id="pencatat">
             <option value="">-- Pilih Nama Petugas --</option>
-            <option value="Ustadz Ahmad Rifani">Ustadz Ahmad Rifani</option>
-            <option value="Ustadz Ahmad Naparin">Ustadz Ahmad Naparin</option>
-            <option value="Ustadz Syamsul Ma'arif">Ustadz Syamsul Ma'arif</option>
-            <!-- Tambahkan nama petugas lain di sini jika diperlukan -->
+            <option value="Ustadz Ahmad">Ustadz Ahmad</option>
+            <option value="Ustadz Farhan">Ustadz Farhan</option>
+            <option value="Ustadz Zaid">Ustadz Zaid</option>
         </select>
     </div>
 
@@ -92,40 +81,47 @@
 </div>
 
 <script>
-    // CONTOH DATABASE SANTRI SEMENTARA (ID dan Nama)
-    const databaseSantri = {
-        "SANTRI-001": "Ahmad Fauzi",
-        "SANTRI-002": "Muhammad Rizki",
-        "SANTRI-003": "Siti Aminah",
-        "SANTRI-004": "Fatimah Zahra"
-    };
-
-    // URL Web App Google Apps Script Anda
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9k5HqsJDbDkd5jVhJL8tOALlWTV-m_3D37JzDLCy1i6KRaFwES640Ja3DXO1xFSlLTg/exec";
+
+    let databaseSantri = {};
+
+    fetch(WEB_APP_URL)
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(item => {
+                databaseSantri[item.id] = item.nama;
+            });
+            document.getElementById("dbStatus").style.display = "none";
+        })
+        .catch(error => {
+            document.getElementById("dbStatus").innerText = "Gagal memuat database santri!";
+            document.getElementById("dbStatus").style.color = "red";
+        });
 
     let lastScannedId = "";
     let lastScanTime = 0;
 
     function onScanSuccess(decodedText, decodedResult) {
         const currentTime = new Date().getTime();
-        if (decodedText === lastScannedId && (currentTime - lastScanTime < 3000)) {
+        let cleanId = decodedText.trim();
+        
+        if (cleanId === lastScannedId && (currentTime - lastScanTime < 3000)) {
             return;
         }
         
-        lastScannedId = decodedText;
+        lastScannedId = cleanId;
         lastScanTime = currentTime;
 
-        let namaSantri = databaseSantri[decodedText];
+        let namaSantri = databaseSantri[cleanId];
         
         if (!namaSantri) {
-            showResult(`ID ${decodedText} tidak ditemukan di database!`, "error");
+            showResult(`ID "${cleanId}" tidak ditemukan di database!`, "error");
             return;
         }
 
         let status = document.getElementById("status").value;
         let pencatat = document.getElementById("pencatat").value;
 
-        // Validasi pilihan petugas
         if (!pencatat) {
             showResult("Harap pilih Nama Petugas terlebih dahulu!", "error");
             return;
@@ -134,7 +130,7 @@
         showResult(`Mengirim data: ${namaSantri} (${status})...`, "");
 
         const dataToSend = {
-            idSantri: decodedText,
+            idSantri: cleanId,
             nama: namaSantri,
             status: status,
             pencatat: pencatat
@@ -143,9 +139,7 @@
         fetch(WEB_APP_URL, {
             method: "POST",
             mode: "no-cors",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dataToSend)
         })
         .then(() => {
@@ -167,9 +161,7 @@
         text.innerHTML = message;
     }
 
-    // Inisialisasi Kamera Scanner
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader", { fps: 10, qrbox: 250 });
+    let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
     html5QrcodeScanner.render(onScanSuccess);
 </script>
 
