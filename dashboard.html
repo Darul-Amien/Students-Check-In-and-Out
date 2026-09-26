@@ -66,6 +66,30 @@
         .btn-masukkan-semua { background-color: #27ae60; }
         .btn-keluarkan-semua { background-color: #e74c3c; }
 
+        .zona-arsip {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+            text-align: center;
+        }
+        .btn-arsip {
+            padding: 8px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background-color: #f4f6f9;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-arsip:hover { background-color: #e2e8f0; }
+        .btn-arsip:disabled { opacity: 0.6; cursor: not-allowed; }
+        .ket-arsip {
+            font-size: 11px;
+            color: #94a3b8;
+            margin: 6px 0 0 0;
+        }
+
         /* Layout Filter & Pencarian */
         .filter-container {
             display: flex;
@@ -175,6 +199,14 @@
                 <!-- Data akan dimasukkan lewat JavaScript -->
             </tbody>
         </table>
+    </div>
+
+    <!-- Zona Berbahaya: Arsip & Reset Log (aksi tahunan / saat log terlalu penuh) -->
+    <div class="zona-arsip">
+        <button id="btnArsipReset" class="btn-arsip" onclick="arsipkanDanResetLog()">
+            🗄️ Arsipkan &amp; Reset Log (Tahunan)
+        </button>
+        <p class="ket-arsip">Menyalin seluruh riwayat log ke sheet arsip baru, lalu mengosongkan log utama. Perlu kode rahasia.</p>
     </div>
 </div>
 
@@ -306,6 +338,46 @@
         } finally {
             btnMasuk.disabled = false;
             btnKeluar.disabled = false;
+        }
+    }
+
+    // ============================================================
+    // AKSI ARSIP & RESET LOG (Tahunan / saat log terlalu penuh)
+    // ============================================================
+    async function arsipkanDanResetLog() {
+        const konfirmasiAwal = confirm(
+            "PERHATIAN!\n\n" +
+            "Aksi ini akan:\n" +
+            "1. Menyalin SELURUH riwayat log ke sheet arsip baru.\n" +
+            "2. Mengosongkan log utama (semua santri akan tampil 'Belum Scan').\n\n" +
+            "Aksi ini TIDAK BISA dibatalkan. Lanjutkan?"
+        );
+        if (!konfirmasiAwal) return;
+
+        const token = prompt("Masukkan kode rahasia untuk melanjutkan:");
+        if (!token) return;
+
+        const btn = document.getElementById("btnArsipReset");
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(WEB_APP_URL_POST, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ aksi: "arsipReset", token: token })
+            });
+            const json = await res.json();
+
+            if (json.result === "success") {
+                alert(json.message);
+                loadDashboardData();
+            } else {
+                alert("Gagal: " + json.message);
+            }
+        } catch (err) {
+            alert("Terjadi kesalahan saat menghubungi server: " + err.message);
+        } finally {
+            btn.disabled = false;
         }
     }
 
