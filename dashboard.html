@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Real-Time Status Santri</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
+        
+        .stats-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .card {
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+        .card-inside { background-color: #27ae60; }
+        .card-outside { background-color: #e74c3c; }
+        .card h3 { margin: 0; font-size: 24px; }
+        .card p { margin: 5px 0 0 0; font-size: 14px; }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+        th { background-color: #2c3e50; color: white; }
+        .badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .badge-masuk { background-color: #27ae60; }
+        .badge-keluar { background-color: #e74c3c; }
+        .loading { text-align: center; font-style: italic; color: #7f8c8d; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Dashboard Status Santri</h2>
+    <div class="subtitle">Pemantauan Kehadiran Real-Time Gerbang Pondok</div>
+
+    <!-- Ringkasan Statistik -->
+    <div class="stats-box">
+        <div class="card card-inside">
+            <h3 id="countMasuk">0</h3>
+            <p>Santri di Dalam Pondok (🏫)</p>
+        </div>
+        <div class="card card-outside">
+            <h3 id="countKeluar">0</h3>
+            <p>Santri di Luar Pondok (🚶‍♂️)</p>
+        </div>
+    </div>
+
+    <!-- Kolom Pencarian Cepat -->
+    <input type="text" id="searchKeyword" class="search-box" placeholder="🔍 Cari nama santri atau ID..." onkeyup="filterData()">
+
+    <!-- Tabel Data -->
+    <div id="loadingText" class="loading">Memuat data real-time dari server...</div>
+    <div style="overflow-x: auto;">
+        <table id="dataTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID Santri</th>
+                    <th>Nama Santri</th>
+                    <th>Status Terakhir</th>
+                    <th>Waktu</th>
+                    <th>Petugas</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data akan dimasukkan lewat JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Ganti dengan URL Web App Google Apps Script Anda yang sama
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9k5HqsJDbDkd5jVhJL8tOALlWTV-m_3D37JzDLCy1i6KRaFwES640Ja3DXO1xFSlLTg/exec?action=rekap";
+
+    let allData = [];
+
+    async function loadDashboardData() {
+        try {
+            let response = await fetch(WEB_APP_URL);
+            allData = await response.json();
+            
+            renderTable(allData);
+            hitungStatistik(allData);
+
+            document.getElementById("loadingText").style.display = "none";
+            document.getElementById("dataTable").style.display = "table";
+        } catch (error) {
+            console.error("Gagal memuat data:", error);
+            document.getElementById("loadingText").innerText = "Gagal memuat data dashboard. Periksa koneksi.";
+            document.getElementById("loadingText").style.color = "red";
+        }
+    }
+
+    function renderTable(data) {
+        let tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Belum ada data absensi tercatat.</td></tr>`;
+            return;
+        }
+
+        data.forEach(item => {
+            let badgeClass = (item.status === "Masuk") ? "badge-masuk" : "badge-keluar";
+            let formattedTime = new Date(item.waktu).toLocaleString("id-ID", { timeZone: "Asia/Makassar" }) + " WITA";
+
+            let row = `<tr>
+                <td>${item.id_santri}</td>
+                <td><b>${item.nama}</b></td>
+                <td><span class="badge ${badgeClass}">${item.status}</span></td>
+                <td>${formattedTime}</td>
+                <td>${item.pencatat || "-"}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function hitungStatistik(data) {
+        let masuk = data.filter(item => item.status === "Masuk").length;
+        let keluar = data.filter(item => item.status === "Keluar").length;
+
+        document.getElementById("countMasuk").innerText = masuk;
+        document.getElementById("countKeluar").innerText = keluar;
+    }
+
+    function filterData() {
+        let keyword = document.getElementById("searchKeyword").value.toLowerCase();
+        let filtered = allData.filter(item => 
+            item.nama.toLowerCase().includes(keyword) || 
+            item.id_santri.toLowerCase().includes(keyword)
+        );
+        renderTable(filtered);
+    }
+
+    // Muat data saat halaman dibuka
+    loadDashboardData();
+
+    // Otomatis refresh data setiap 10 detik agar benar-benar real-time tanpa perlu manual reload
+    setInterval(loadDashboardData, 10000);
+</script>
+
+</body>
+</html>
