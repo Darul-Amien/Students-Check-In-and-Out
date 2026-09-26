@@ -34,19 +34,36 @@
             border-radius: 8px;
             color: white;
             text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
         }
+        .card:hover { transform: scale(1.02); opacity: 0.9; }
         .card-inside { background-color: #27ae60; }
         .card-outside { background-color: #e74c3c; }
         .card h3 { margin: 0; font-size: 24px; }
         .card p { margin: 5px 0 0 0; font-size: 14px; }
 
+        /* Layout Filter & Pencarian */
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
         .search-box {
-            width: 100%;
+            flex: 2;
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
             font-size: 14px;
-            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        .select-filter {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            background-color: white;
             box-sizing: border-box;
         }
 
@@ -80,20 +97,27 @@
     <h2>Dashboard Status Santri</h2>
     <div class="subtitle">Pemantauan Kehadiran Real-Time Gerbang Pondok</div>
 
-    <!-- Ringkasan Statistik -->
+    <!-- Ringkasan Statistik (Klik kartu untuk filter otomatis) -->
     <div class="stats-box">
-        <div class="card card-inside">
+        <div class="card card-inside" onclick="filterByCard('Masuk')">
             <h3 id="countMasuk">0</h3>
-            <p>Santri di Dalam Pondok (🏫)</p>
+            <p>Santri di Dalam Pondok (🏫) [Klik untuk Filter]</p>
         </div>
-        <div class="card card-outside">
+        <div class="card card-outside" onclick="filterByCard('Keluar')">
             <h3 id="countKeluar">0</h3>
-            <p>Santri di Luar Pondok (🚶‍♂️)</p>
+            <p>Santri di Luar Pondok (🚶‍♂️) [Klik untuk Filter]</p>
         </div>
     </div>
 
-    <!-- Kolom Pencarian Cepat -->
-    <input type="text" id="searchKeyword" class="search-box" placeholder="🔍 Cari nama santri atau ID..." onkeyup="filterData()">
+    <!-- Kolom Pencarian & Filter Status -->
+    <div class="filter-container">
+        <input type="text" id="searchKeyword" class="search-box" placeholder="🔍 Cari nama santri atau ID..." onkeyup="filterData()">
+        <select id="statusFilter" class="select-filter" onchange="filterData()">
+            <option value="">-- Semua Status --</option>
+            <option value="Masuk">Masuk (🏫)</option>
+            <option value="Keluar">Keluar (🚶‍♂️)</option>
+        </select>
+    </div>
 
     <!-- Tabel Data -->
     <div id="loadingText" class="loading">Memuat data real-time dari server...</div>
@@ -116,7 +140,7 @@
 </div>
 
 <script>
-    // Ganti dengan URL Web App Google Apps Script Anda yang sama
+    // Ganti dengan URL Web App Google Apps Script Anda
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9k5HqsJDbDkd5jVhJL8tOALlWTV-m_3D37JzDLCy1i6KRaFwES640Ja3DXO1xFSlLTg/exec?action=rekap";
 
     let allData = [];
@@ -126,7 +150,7 @@
             let response = await fetch(WEB_APP_URL);
             allData = await response.json();
             
-            renderTable(allData);
+            filterData();
             hitungStatistik(allData);
 
             document.getElementById("loadingText").style.display = "none";
@@ -143,7 +167,7 @@
         tbody.innerHTML = "";
 
         if (data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Belum ada data absensi tercatat.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Tidak ada data santri yang sesuai filter.</td></tr>`;
             return;
         }
 
@@ -163,26 +187,42 @@
     }
 
     function hitungStatistik(data) {
-        let masuk = data.filter(item => item.status === "Masuk").length;
-        let keluar = data.filter(item => item.status === "Keluar").length;
+        let masuk = allData.filter(item => item.status === "Masuk").length;
+        let keluar = allData.filter(item => item.status === "Keluar").length;
 
         document.getElementById("countMasuk").innerText = masuk;
         document.getElementById("countKeluar").innerText = keluar;
     }
 
+    // Fungsi Gabungan untuk Pencarian Teks & Filter Status Dropdown
     function filterData() {
         let keyword = document.getElementById("searchKeyword").value.toLowerCase();
-        let filtered = allData.filter(item => 
-            item.nama.toLowerCase().includes(keyword) || 
-            item.id_santri.toLowerCase().includes(keyword)
-        );
+        let selectedStatus = document.getElementById("statusFilter").value;
+
+        let filtered = allData.filter(item => {
+            let matchKeyword = item.nama.toLowerCase().includes(keyword) || item.id_santri.toLowerCase().includes(keyword);
+            let matchStatus = selectedStatus === "" || item.status === selectedStatus;
+            return matchKeyword && matchStatus;
+        });
+
         renderTable(filtered);
+    }
+
+    // Fungsi pintasan saat kartu statistik atas diklik
+    function filterByCard(status) {
+        let dropdown = document.getElementById("statusFilter");
+        if (dropdown.value === status) {
+            dropdown.value = ""; // Toggle off jika diklik dua kali
+        } else {
+            dropdown.value = status;
+        }
+        filterData();
     }
 
     // Muat data saat halaman dibuka
     loadDashboardData();
 
-    // Otomatis refresh data setiap 10 detik agar benar-benar real-time tanpa perlu manual reload
+    // Otomatis refresh data setiap 10 detik
     setInterval(loadDashboardData, 10000);
 </script>
 
