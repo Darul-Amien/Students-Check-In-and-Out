@@ -88,7 +88,7 @@
     <!-- Tombol tes audio (Sekaligus mengaktifkan izin audio browser HP) -->
     <button class="btn-test" onclick="testAudio()">🔊 Klik di Sini untuk Aktifkan Suara</button>
 
-    <!-- Diubah menjadi Dropdown untuk Nama Petugas -->
+    <!-- Dropdown untuk Nama Petugas Penjaga -->
     <div class="form-group">
         <label for="petugas">Nama Petugas Penjaga:</label>
         <select id="petugas">
@@ -96,7 +96,8 @@
             <option value="Ustadz Ahmad Rifani">Ustadz Ahmad Rifani</option>
             <option value="Ustadz Keamanan">Ustadz Keamanan</option>
             <option value="Ustadz Pengabdian">Ustadz Pengabdian</option>
-            <option value="Ustdadzah Pengabdian">Ustadzah Pengabdian</option>
+            <option value="Ustdadzah Pengabdian">Ustdadzah Pengabdian</option>
+            <option value="Admin Gerbang">Admin Gerbang</option>
         </select>
     </div>
 
@@ -128,7 +129,7 @@
     // Fungsi untuk memutar suara MP3
     function putarSuara() {
         audioTerimaKasih.currentTime = 0; 
-        audioTerisaKasih.play().catch(error => {
+        audioTerimaKasih.play().catch(error => {
             console.log("Audio diblokir browser sebelum interaksi:", error);
         });
     }
