@@ -311,6 +311,9 @@
         );
         if (!konfirmasi) return;
 
+        const token = prompt("Masukkan kode rahasia untuk melanjutkan:");
+        if (!token) return;
+
         const pencatat = prompt("Masukkan nama Anda sebagai pencatat aksi ini:", "Admin Dashboard");
         if (!pencatat) return; // batal jika kosong / cancel
 
@@ -323,7 +326,7 @@
             const res = await fetch(WEB_APP_URL_POST, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ aksi: "massal", status: status, pencatat: pencatat })
+                body: JSON.stringify({ aksi: "massal", status: status, pencatat: pencatat, token: token })
             });
             const json = await res.json();
 
