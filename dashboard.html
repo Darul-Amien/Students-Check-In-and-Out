@@ -44,6 +44,28 @@
         .card h3 { margin: 0; font-size: 24px; }
         .card p { margin: 5px 0 0 0; font-size: 13px; }
 
+        /* Tombol Aksi Massal */
+        .aksi-massal-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-massal {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-massal:hover { opacity: 0.88; }
+        .btn-massal:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-masukkan-semua { background-color: #27ae60; }
+        .btn-keluarkan-semua { background-color: #e74c3c; }
+
         /* Layout Filter & Pencarian */
         .filter-container {
             display: flex;
@@ -115,6 +137,16 @@
         </div>
     </div>
 
+    <!-- Aksi Massal: Ubah status SEMUA santri sekaligus -->
+    <div class="aksi-massal-box">
+        <button id="btnMasukkanSemua" class="btn-massal btn-masukkan-semua" onclick="aksiMassal('Masuk')">
+            🏫 Masukkan Semua
+        </button>
+        <button id="btnKeluarkanSemua" class="btn-massal btn-keluarkan-semua" onclick="aksiMassal('Keluar')">
+            🚶‍♂️ Keluarkan Semua
+        </button>
+    </div>
+
     <!-- Kolom Pencarian & Filter Status -->
     <div class="filter-container">
         <input type="text" id="searchKeyword" class="search-box" placeholder="🔍 Cari nama santri atau ID..." onkeyup="filterData()">
@@ -149,6 +181,9 @@
 <script>
     // Ganti dengan URL Web App Google Apps Script Anda
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9k5HqsJDbDkd5jVhJL8tOALlWTV-m_3D37JzDLCy1i6KRaFwES640Ja3DXO1xFSlLTg/exec?action=rekap";
+
+    // URL dasar (tanpa query string) dipakai untuk mengirim aksi massal via POST
+    const WEB_APP_URL_POST = WEB_APP_URL.split('?')[0];
 
     let allData = [];
 
@@ -230,6 +265,48 @@
             dropdown.value = status;
         }
         filterData();
+    }
+
+    // ============================================================
+    // AKSI MASSAL: "Masukkan Semua" / "Keluarkan Semua"
+    // ============================================================
+    async function aksiMassal(status) {
+        const label = status === "Masuk" ? "MASUKKAN" : "KELUARKAN";
+
+        const konfirmasi = confirm(
+            `Yakin ingin ${label} SEMUA santri sekaligus?\n\n` +
+            `Aksi ini akan mencatat status baru untuk seluruh santri di log, dan tidak bisa dibatalkan.`
+        );
+        if (!konfirmasi) return;
+
+        const pencatat = prompt("Masukkan nama Anda sebagai pencatat aksi ini:", "Admin Dashboard");
+        if (!pencatat) return; // batal jika kosong / cancel
+
+        const btnMasuk = document.getElementById("btnMasukkanSemua");
+        const btnKeluar = document.getElementById("btnKeluarkanSemua");
+        btnMasuk.disabled = true;
+        btnKeluar.disabled = true;
+
+        try {
+            const res = await fetch(WEB_APP_URL_POST, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ aksi: "massal", status: status, pencatat: pencatat })
+            });
+            const json = await res.json();
+
+            if (json.result === "success") {
+                alert(json.message);
+                loadDashboardData();
+            } else {
+                alert("Gagal: " + json.message);
+            }
+        } catch (err) {
+            alert("Terjadi kesalahan saat menghubungi server: " + err.message);
+        } finally {
+            btnMasuk.disabled = false;
+            btnKeluar.disabled = false;
+        }
     }
 
     loadDashboardData();
