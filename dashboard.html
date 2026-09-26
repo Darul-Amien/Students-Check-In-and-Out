@@ -40,8 +40,9 @@
         .card:hover { transform: scale(1.02); opacity: 0.9; }
         .card-inside { background-color: #27ae60; }
         .card-outside { background-color: #e74c3c; }
+        .card-belum { background-color: #7f8c8d; }
         .card h3 { margin: 0; font-size: 24px; }
-        .card p { margin: 5px 0 0 0; font-size: 14px; }
+        .card p { margin: 5px 0 0 0; font-size: 13px; }
 
         /* Layout Filter & Pencarian */
         .filter-container {
@@ -88,6 +89,7 @@
         }
         .badge-masuk { background-color: #27ae60; }
         .badge-keluar { background-color: #e74c3c; }
+        .badge-belum { background-color: #95a5a6; }
         .loading { text-align: center; font-style: italic; color: #7f8c8d; padding: 20px; }
     </style>
 </head>
@@ -95,17 +97,21 @@
 
 <div class="container">
     <h2>Dashboard Status Santri</h2>
-    <div class="subtitle">Pemantauan Kehadiran Real-Time Gerbang Pondok</div>
+    <div class="subtitle">Pemantauan Kehadiran Seluruh Santri Real-Time</div>
 
-    <!-- Ringkasan Statistik (Klik kartu untuk filter otomatis) -->
+    <!-- Ringkasan Statistik -->
     <div class="stats-box">
         <div class="card card-inside" onclick="filterByCard('Masuk')">
             <h3 id="countMasuk">0</h3>
-            <p>Santri di Dalam Pondok (🏫) [Klik untuk Filter]</p>
+            <p>Di Dalam (🏫)</p>
         </div>
         <div class="card card-outside" onclick="filterByCard('Keluar')">
             <h3 id="countKeluar">0</h3>
-            <p>Santri di Luar Pondok (🚶‍♂️) [Klik untuk Filter]</p>
+            <p>Di Luar (🚶‍♂️)</p>
+        </div>
+        <div class="card card-belum" onclick="filterByCard('Belum Scan')">
+            <h3 id="countBelum">0</h3>
+            <p>Belum Scan (⏳)</p>
         </div>
     </div>
 
@@ -116,6 +122,7 @@
             <option value="">-- Semua Status --</option>
             <option value="Masuk">Masuk (🏫)</option>
             <option value="Keluar">Keluar (🚶‍♂️)</option>
+            <option value="Belum Scan">Belum Scan (⏳)</option>
         </select>
     </div>
 
@@ -172,8 +179,14 @@
         }
 
         data.forEach(item => {
-            let badgeClass = (item.status === "Masuk") ? "badge-masuk" : "badge-keluar";
-            let formattedTime = new Date(item.waktu).toLocaleString("id-ID", { timeZone: "Asia/Makassar" }) + " WITA";
+            let badgeClass = "badge-belum";
+            if (item.status === "Masuk") badgeClass = "badge-masuk";
+            else if (item.status === "Keluar") badgeClass = "badge-keluar";
+
+            let formattedTime = "-";
+            if (item.waktu) {
+                formattedTime = new Date(item.waktu).toLocaleString("id-ID", { timeZone: "Asia/Makassar" }) + " WITA";
+            }
 
             let row = `<tr>
                 <td>${item.id_santri}</td>
@@ -189,12 +202,13 @@
     function hitungStatistik(data) {
         let masuk = allData.filter(item => item.status === "Masuk").length;
         let keluar = allData.filter(item => item.status === "Keluar").length;
+        let belum = allData.filter(item => item.status === "Belum Scan").length;
 
         document.getElementById("countMasuk").innerText = masuk;
         document.getElementById("countKeluar").innerText = keluar;
+        document.getElementById("countBelum").innerText = belum;
     }
 
-    // Fungsi Gabungan untuk Pencarian Teks & Filter Status Dropdown
     function filterData() {
         let keyword = document.getElementById("searchKeyword").value.toLowerCase();
         let selectedStatus = document.getElementById("statusFilter").value;
@@ -208,21 +222,17 @@
         renderTable(filtered);
     }
 
-    // Fungsi pintasan saat kartu statistik atas diklik
     function filterByCard(status) {
         let dropdown = document.getElementById("statusFilter");
         if (dropdown.value === status) {
-            dropdown.value = ""; // Toggle off jika diklik dua kali
+            dropdown.value = "";
         } else {
             dropdown.value = status;
         }
         filterData();
     }
 
-    // Muat data saat halaman dibuka
     loadDashboardData();
-
-    // Otomatis refresh data setiap 10 detik
     setInterval(loadDashboardData, 10000);
 </script>
 
