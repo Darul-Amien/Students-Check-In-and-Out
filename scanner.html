@@ -88,9 +88,16 @@
     <!-- Tombol tes audio (Sekaligus mengaktifkan izin audio browser HP) -->
     <button class="btn-test" onclick="testAudio()">🔊 Klik di Sini untuk Aktifkan Suara</button>
 
+    <!-- Diubah menjadi Dropdown untuk Nama Petugas -->
     <div class="form-group">
         <label for="petugas">Nama Petugas Penjaga:</label>
-        <input type="text" id="petugas" placeholder="Masukkan nama Anda..." value="Admin Gerbang">
+        <select id="petugas">
+            <option value="">-- Pilih Nama Petugas --</option>
+            <option value="Ustadz Ahmad">Ustadz Ahmad</option>
+            <option value="Ustadz Muhammad">Ustadz Muhammad</option>
+            <option value="Ustadz Zaini">Ustadz Zaini</option>
+            <option value="Admin Gerbang">Admin Gerbang</option>
+        </select>
     </div>
 
     <div class="form-group">
@@ -121,7 +128,7 @@
     // Fungsi untuk memutar suara MP3
     function putarSuara() {
         audioTerimaKasih.currentTime = 0; 
-        audioTerimaKasih.play().catch(error => {
+        audioTerisaKasih.play().catch(error => {
             console.log("Audio diblokir browser sebelum interaksi:", error);
         });
     }
@@ -157,14 +164,15 @@
         let petugas = document.getElementById("petugas").value.trim();
         let statusDipilih = document.getElementById("statusScan").value;
 
-        console.log("QR Code Terbaca (Mentah):", JSON.stringify(decodedText));
-        console.log("ID Santri Setelah di-trim:", JSON.stringify(idSantriScan));
-
+        // Validasi apakah petugas sudah dipilih
         if (!petugas) {
-            showAlert("Nama petugas belum diisi!", "error");
+            showAlert("Silakan pilih Nama Petugas terlebih dahulu!", "error");
             isProcessing = false;
             return;
         }
+
+        console.log("QR Code Terbaca (Mentah):", JSON.stringify(decodedText));
+        console.log("ID Santri Setelah di-trim:", JSON.stringify(idSantriScan));
 
         // Pembersih karakter khusus (mengabaikan strip dan spasi agar pencocokan selalu akurat)
         let cleanScanId = idSantriScan.replace(/[-\s]/g, "");
