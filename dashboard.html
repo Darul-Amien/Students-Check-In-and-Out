@@ -22,7 +22,7 @@
         }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
         .subtitle { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
-        
+
         .stats-box {
             display: flex;
             gap: 15px;
@@ -95,9 +95,11 @@
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         .search-box {
             flex: 2;
+            min-width: 180px;
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
@@ -106,6 +108,7 @@
         }
         .select-filter {
             flex: 1;
+            min-width: 130px;
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
@@ -171,7 +174,7 @@
         </button>
     </div>
 
-    <!-- Kolom Pencarian & Filter Status -->
+    <!-- Kolom Pencarian & Filter -->
     <div class="filter-container">
         <input type="text" id="searchKeyword" class="search-box" placeholder="🔍 Cari nama santri atau ID..." onkeyup="filterData()">
         <select id="statusFilter" class="select-filter" onchange="filterData()">
@@ -179,6 +182,9 @@
             <option value="Masuk">Masuk (🏫)</option>
             <option value="Keluar">Keluar (🚶‍♂️)</option>
             <option value="Belum Scan">Belum Scan (⏳)</option>
+        </select>
+        <select id="kelasFilter" class="select-filter" onchange="filterData()">
+            <option value="">-- Semua Kelas --</option>
         </select>
     </div>
 
@@ -190,6 +196,7 @@
                 <tr>
                     <th>ID Santri</th>
                     <th>Nama Santri</th>
+                    <th>Kelas</th>
                     <th>Status Terakhir</th>
                     <th>Waktu</th>
                     <th>Petugas</th>
@@ -223,9 +230,9 @@
         try {
             let response = await fetch(WEB_APP_URL);
             allData = await response.json();
-            
-            filterData();
-            hitungStatistik(allData);
+
+            isiOpsiKelas();
+            filterData(); // otomatis memanggil hitungStatistik()
 
             document.getElementById("loadingText").style.display = "none";
             document.getElementById("dataTable").style.display = "table";
@@ -236,12 +243,24 @@
         }
     }
 
+    // Mengisi pilihan kelas otomatis dari data (pilihan tetap terjaga saat refresh)
+    function isiOpsiKelas() {
+        const dropdown = document.getElementById("kelasFilter");
+        const dipilih = dropdown.value;
+        const daftarKelas = [...new Set(allData.map(i => i.kelas).filter(k => k))]
+            .sort((a, b) => String(a).localeCompare(String(b), 'id', { numeric: true }));
+
+        dropdown.innerHTML = '<option value="">-- Semua Kelas --</option>' +
+            daftarKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+        dropdown.value = dipilih;
+    }
+
     function renderTable(data) {
         let tbody = document.getElementById("tableBody");
         tbody.innerHTML = "";
 
         if (data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Tidak ada data santri yang sesuai filter.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Tidak ada data santri yang sesuai filter.</td></tr>`;
             return;
         }
 
@@ -258,6 +277,7 @@
             let row = `<tr>
                 <td>${item.id_santri}</td>
                 <td><b>${item.nama}</b></td>
+                <td>${item.kelas || "-"}</td>
                 <td><span class="badge ${badgeClass}">${item.status}</span></td>
                 <td>${formattedTime}</td>
                 <td>${item.pencatat || "-"}</td>
@@ -266,27 +286,30 @@
         });
     }
 
-    function hitungStatistik(data) {
-        let masuk = allData.filter(item => item.status === "Masuk").length;
-        let keluar = allData.filter(item => item.status === "Keluar").length;
-        let belum = allData.filter(item => item.status === "Belum Scan").length;
+    // Statistik mengikuti kelas yang dipilih
+    function hitungStatistik() {
+        const kelas = document.getElementById("kelasFilter").value;
+        const data = kelas === "" ? allData : allData.filter(i => String(i.kelas) === kelas);
 
-        document.getElementById("countMasuk").innerText = masuk;
-        document.getElementById("countKeluar").innerText = keluar;
-        document.getElementById("countBelum").innerText = belum;
+        document.getElementById("countMasuk").innerText = data.filter(i => i.status === "Masuk").length;
+        document.getElementById("countKeluar").innerText = data.filter(i => i.status === "Keluar").length;
+        document.getElementById("countBelum").innerText = data.filter(i => i.status === "Belum Scan").length;
     }
 
     function filterData() {
         let keyword = document.getElementById("searchKeyword").value.toLowerCase();
         let selectedStatus = document.getElementById("statusFilter").value;
+        let selectedKelas = document.getElementById("kelasFilter").value;
 
         let filtered = allData.filter(item => {
             let matchKeyword = item.nama.toLowerCase().includes(keyword) || item.id_santri.toLowerCase().includes(keyword);
             let matchStatus = selectedStatus === "" || item.status === selectedStatus;
-            return matchKeyword && matchStatus;
+            let matchKelas = selectedKelas === "" || String(item.kelas) === selectedKelas;
+            return matchKeyword && matchStatus && matchKelas;
         });
 
         renderTable(filtered);
+        hitungStatistik();
     }
 
     function filterByCard(status) {
@@ -315,7 +338,7 @@
         if (!token) return;
 
         const pencatat = prompt("Masukkan nama Anda sebagai pencatat aksi ini:", "Admin Dashboard");
-        if (!pencatat) return; // batal jika kosong / cancel
+        if (!pencatat) return;
 
         const btnMasuk = document.getElementById("btnMasukkanSemua");
         const btnKeluar = document.getElementById("btnKeluarkanSemua");
