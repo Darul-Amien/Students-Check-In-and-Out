@@ -225,6 +225,7 @@
     const WEB_APP_URL_POST = WEB_APP_URL.split('?')[0];
 
     let allData = [];
+    let timerRefresh = null;
 
     async function loadDashboardData() {
         try {
@@ -240,6 +241,10 @@
             console.error("Gagal memuat data:", error);
             document.getElementById("loadingText").innerText = "Gagal memuat data dashboard. Periksa koneksi.";
             document.getElementById("loadingText").style.color = "red";
+        } finally {
+            // Jadwalkan refresh berikutnya HANYA setelah yang sekarang selesai (tidak menumpuk)
+            clearTimeout(timerRefresh);
+            timerRefresh = setTimeout(loadDashboardData, 10000);
         }
     }
 
@@ -264,7 +269,7 @@
             return;
         }
 
-        data.forEach(item => {
+        const html = data.map(item => {
             let badgeClass = "badge-belum";
             if (item.status === "Masuk") badgeClass = "badge-masuk";
             else if (item.status === "Keluar") badgeClass = "badge-keluar";
@@ -274,7 +279,7 @@
                 formattedTime = new Date(item.waktu).toLocaleString("id-ID", { timeZone: "Asia/Makassar" }) + " WITA";
             }
 
-            let row = `<tr>
+            return `<tr>
                 <td>${item.id_santri}</td>
                 <td><b>${item.nama}</b></td>
                 <td>${item.kelas || "-"}</td>
@@ -282,8 +287,8 @@
                 <td>${formattedTime}</td>
                 <td>${item.pencatat || "-"}</td>
             </tr>`;
-            tbody.innerHTML += row;
-        });
+        }).join("");
+        tbody.innerHTML = html;
     }
 
     // Statistik mengikuti kelas yang dipilih
@@ -408,7 +413,6 @@
     }
 
     loadDashboardData();
-    setInterval(loadDashboardData, 10000);
 </script>
 
 </body>
